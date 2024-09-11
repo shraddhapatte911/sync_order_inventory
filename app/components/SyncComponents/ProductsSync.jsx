@@ -4,6 +4,7 @@ import TableOfSelectedProducts from './TableOfSelectedProducts';
 import Placeholder from '../Placeholder';
 import { PlusIcon } from '@shopify/polaris-icons';
 import ModalComponent from '../ModalComponent';
+import syncListedProducts from '../../apis/syncListedProducts';
 
 export default function ProductsSync() {
     const [resourcetype, setResourceType] = useState('product');
@@ -82,52 +83,52 @@ export default function ProductsSync() {
         }
     }
 
-    const handleProductSelect = async () => {
-        try {
-            const selected = await shopify.resourcePicker({
-                type: resourcetype,
-                multiple: true,
-                filter: {
-                    // hidden: true,
-                    variants: false,
-                    // draft: false,
-                    // archived: false,
-                },
-                selectionIds: selectedProducts
-            });
+    // const handleProductSelect = async () => {
+    //     try {
+    //         const selected = await shopify.resourcePicker({
+    //             type: resourcetype,
+    //             multiple: true,
+    //             filter: {
+    //                 // hidden: true,
+    //                 variants: false,
+    //                 // draft: false,
+    //                 // archived: false,
+    //             },
+    //             selectionIds: selectedProducts
+    //         });
 
-            const selectedIDS = selected.map(d => ({
-                id: d.id,
-                ...(d.variants?.length > 0 ? {
-                    variants: d.variants.map(cd => ({ id: cd.id }))
-                } : {})
-            }));
+    //         const selectedIDS = selected.map(d => ({
+    //             id: d.id,
+    //             ...(d.variants?.length > 0 ? {
+    //                 variants: d.variants.map(cd => ({ id: cd.id }))
+    //             } : {})
+    //         }));
 
-            console.log("selectedIDS", selectedIDS);
-            setSelectedProducts(selectedIDS);
+    //         console.log("selectedIDS", selectedIDS);
+    //         setSelectedProducts(selectedIDS);
 
-            const filteredIDS = selectedIDS.map(da => Number(da.id.slice(22)));
-            console.log("filteredIDS", filteredIDS);
+    //         const filteredIDS = selectedIDS.map(da => Number(da.id.slice(22)));
+    //         console.log("filteredIDS", filteredIDS);
 
-            const response = await fetch('/api/syncProduct', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ ids: filteredIDS })
-            });
+    //         const response = await fetch('/api/syncProduct', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({ ids: filteredIDS })
+    //         });
 
-            if (response.ok) {
-                const { message } = await response.json();
-                // console.log("data from response", message);
-                return shopify.toast.show(message);
-            } else {
-                console.error("Failed to sync products", await response.json());
-            }
-        } catch (error) {
-            console.log("error occurred from handleProductSelect", error);
-        }
-    };
+    //         if (response.ok) {
+    //             const { message } = await response.json();
+    //             // console.log("data from response", message);
+    //             return shopify.toast.show(message);
+    //         } else {
+    //             console.error("Failed to sync products", await response.json());
+    //         }
+    //     } catch (error) {
+    //         console.log("error occurred from handleProductSelect", error);
+    //     }
+    // };
 
     // const handleResourceTypeChange = useCallback((value) => setResourceType(value[0]), []);
 
@@ -173,6 +174,17 @@ export default function ProductsSync() {
     // const calculateItemNumber = (index) => {
     //     return currentPage * itemsPerPage + index + 1;
     // };
+
+    const handleSyncProducts = useCallback(() => {
+        try {
+            syncListedProducts()
+            console.log("hit syncListedProducts");
+
+        } catch (error) {
+            console.log("error on handleSyncProducts", error);
+
+        }
+    }, [])
 
     return (
         <>
@@ -247,7 +259,7 @@ export default function ProductsSync() {
 
                                             <Placeholder
                                                 component={
-                                                    <Button variant="primary" onClick={handleProductSelect}>
+                                                    <Button variant="primary" onClick={handleSyncProducts}>
                                                         Sync Products
                                                     </Button>
                                                 }
@@ -258,7 +270,7 @@ export default function ProductsSync() {
 
                                             <Divider borderColor="transparent" />
 
-                                            <Button variant="primary" onClick={handleProductSelect}>
+                                            <Button variant="primary" onClick={() => { }}>
                                                 Sync Orders
                                             </Button>
                                         </Card>

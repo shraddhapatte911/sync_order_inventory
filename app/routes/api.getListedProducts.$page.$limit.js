@@ -3,9 +3,11 @@ import { authenticate } from "../shopify.server";
 import fetchListedProducts from "../apis/fetchListedProducts";
 
 export const loader = async ({ request, params }) => {
+    console.log("triggered getListedProducts api");
+
     try {
         const { admin, session } = await authenticate.admin(request);
-        const page_no = parseInt(params.page, 10); 
+        const page_no = parseInt(params.page, 10);
         const page_size = parseInt(params.limit, 10);
         const api_key = process.env.crewsupply_api_key;
 
@@ -14,13 +16,13 @@ export const loader = async ({ request, params }) => {
         const hasNextPage = (page_no + 1) * page_size < totalProducts;
         const hasPrevPage = page_no > 0;
 
-        console.log("gotProducts from fetchListedProducts..........", gotProducts.length,
-            "       totalProducts", totalProducts,
-            "         hasNextPage", hasNextPage,
-            "         hasPrevPage", hasPrevPage,
-            "         page_no", page_no,
-            "         page_size", page_size
-        );
+        // console.log("gotProducts from fetchListedProducts..........", gotProducts.length,
+        //     "       totalProducts", totalProducts,
+        //     "         hasNextPage", hasNextPage,
+        //     "         hasPrevPage", hasPrevPage,
+        //     "         page_no", page_no,
+        //     "         page_size", page_size
+        // );
 
         return json({
             ProductsData: gotProducts,

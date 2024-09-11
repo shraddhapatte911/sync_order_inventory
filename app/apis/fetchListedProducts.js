@@ -1,6 +1,7 @@
 const fetchListedProducts = async (page_no, page_size, api_key) => {
     let totalProducts;
     let gotProducts = [];
+    // console.log("page_no, page_size, api_key", page_no, "    ", page_size, "     ", api_key);
 
     try {
         const responseOfModelNo = await fetch("https://api.crewsupply.kickscrew.com/sapi/v2/stock/list", {
@@ -34,7 +35,7 @@ const fetchListedProducts = async (page_no, page_size, api_key) => {
                 const dataOfProducts = await responseOfProducts.json();
                 // console.log("dataOfProducts from fetchListedProducts.........", dataOfProducts);
 
-                gotProducts.push({ ...(dataOfProducts.data), model_no_id: _d.id, quantity: _d.qty });
+                gotProducts.push({ ...(dataOfProducts.data), model_no_id: _d.id, quantity: _d.qty, model_size: _d.size, modal_price: _d.price });
             }
 
             // console.log("gotProducts from fetchListedProducts..........", gotProducts);

@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://end-organic-valued-whilst.trycloudflare.com"
+application_url = "https://calgary-samsung-berry-boot.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,17 +13,22 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = ""
+scopes = "read_products,write_products"
 
 [auth]
 redirect_urls = [
-  "https://end-organic-valued-whilst.trycloudflare.com/auth/callback",
-  "https://end-organic-valued-whilst.trycloudflare.com/auth/shopify/callback",
-  "https://end-organic-valued-whilst.trycloudflare.com/api/auth/callback"
+  "https://calgary-samsung-berry-boot.trycloudflare.com/auth/callback",
+  "https://calgary-samsung-berry-boot.trycloudflare.com/auth/shopify/callback",
+  "https://calgary-samsung-berry-boot.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
+
+[app_proxy]
+url = "https://calgary-samsung-berry-boot.trycloudflare.com"
+subpath = "sync-order-inventory"
+prefix = "apps"
 
 [pos]
 embedded = false
