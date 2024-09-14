@@ -2,50 +2,60 @@ import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import fetchListedProducts from "../apis/fetchListedProducts";
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000; // 1 second delay incase any aerror.
+
+console.log("sync process has been started!");
+
+
+const graphqlRequest = async (admin, query, variables = {}) => {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await admin.graphql(query, { variables });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`GraphQL error: ${data.errors?.map(e => e.message).join(', ')}`);
+            }
+            return data;
+        } catch (error) {
+            if (attempt === MAX_RETRIES) {
+                console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
+                throw error; // Rethrow error after last attempt.
+            }
+            console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); // Waiting before retrying processs.
+        }
+    }
+};
+
 export const loader = async ({ request }) => {
+    console.log("sync process has been started!");
     try {
         const { session, admin } = await authenticate.admin(request);
         const api_key = process.env.crewsupply_api_key;
 
-        // ........................................kickscrew products fetching..........................................
-
-        let kickscrewProducts = []
-        let kickscrewHasNextPage = true
-        let kickscrewTotalPages;
-        let kickscrewTotalItems;
-        let kickscrewItemsPerPage = 20
-        let kickscrewCurrentPage = 0
+        let totalProductsToUpdate = [];
+        let kickscrewCurrentPage = 0;
+        const kickscrewItemsPerPage = 20;
+        let kickscrewHasNextPage = true;
 
         while (kickscrewHasNextPage) {
             const { totalProducts, gotProducts } = await fetchListedProducts(kickscrewCurrentPage, kickscrewItemsPerPage, api_key);
+            totalProductsToUpdate.push(...gotProducts);
 
-            // console.log("totalProducts, gotProducts ", totalProducts, "            ", gotProducts);
+            kickscrewHasNextPage = (kickscrewCurrentPage + 1) * kickscrewItemsPerPage < totalProducts;
+            kickscrewCurrentPage++;
+        }
 
+        console.log("First Product:", totalProductsToUpdate[0]);
+        console.log("Total Products Updated:", totalProductsToUpdate.length);
 
-            const hasNextPageS = (kickscrewCurrentPage + 1) * kickscrewItemsPerPage < totalProducts;
-            const hasPrevPageS = kickscrewCurrentPage > 0;
-
-            kickscrewProducts = [...gotProducts]
-            kickscrewHasNextPage = hasNextPageS
-            kickscrewTotalPages = Math.ceil(totalProducts / kickscrewItemsPerPage)
-            kickscrewTotalItems = totalProducts
-            // console.log("kickscrewHasNextPage", kickscrewHasNextPage);
-
-            // ................................store products.....................................
-            let count = 0;
-            // console.log("count !== kickscrewProducts.length", count !== kickscrewProducts.length);
-
-            while (count !== kickscrewProducts.length) {
-                console.log("kickscrewProducts.length", kickscrewProducts.length, '      ', kickscrewProducts[count].model_number);
-                // console.log("kickscrewProducts[count]", kickscrewProducts[count]);
-
-
-                // console.log('storeProductsHasNextPage', storeProductsHasNextPage);
-                // console.log('storeProductsEndcursor', JSON.stringify(storeProductsEndcursor));
-                const responseProductTag = await admin.graphql(
-                    `#graphql
+        await Promise.all(totalProductsToUpdate.map(async (product) => {
+            try {
+                const productTagQuery = `
+                    #graphql
                     query {
-                        products(first: 10, query: "tag:${kickscrewProducts[count].model_number}") {
+                        products(first: 10, query: "tag:${product.model_number}") {
                             edges {
                                 node {
                                     id
@@ -55,23 +65,14 @@ export const loader = async ({ request }) => {
                                 }
                             }
                         }
-                    }`,
-                );
-
-                const dataOfProductTag = await responseProductTag.json();
-                // console.log('kickscrewProducts[count].model_number--------------------------', kickscrewProducts[count].model_number);
-
-                // console.log("kickscrewProducts ", kickscrewProducts);
-
-                // console.log("dataOfProductTag.data?.products?.edges?.[0]?.node?.id", dataOfProductTag.data?.products?.edges);
-
-
-                const tagValue = dataOfProductTag.data?.products?.edges?.[0]?.node?.id || null
-                console.log("dataOfProductTag.data?.products?.edges", dataOfProductTag.data?.products?.edges);
+                    }
+                `;
+                const dataOfProductTag = await graphqlRequest(admin, productTagQuery);
+                const tagValue = dataOfProductTag.data?.products?.edges?.[0]?.node?.id;
 
                 if (tagValue) {
-                    const responseProductVariants = await admin.graphql(
-                        `#graphql
+                    const productVariantsQuery = `
+                        #graphql
                         query {
                             product(id: "${tagValue}") {
                                 title
@@ -87,169 +88,84 @@ export const loader = async ({ request }) => {
                                             inventoryItem {
                                                 id
                                                 inventoryLevels(first: 10) {
-                                                edges {
-                                                    node{
-                                                        id
-                                                        location {
+                                                    edges {
+                                                        node {
                                                             id
+                                                            location {
+                                                                id
+                                                            }
                                                         }
                                                     }
-                                                }
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }`,
+                        }
+                    `;
+                    const dataOfProductVariants = await graphqlRequest(admin, productVariantsQuery);
+                    console.log("sssssss dataOfProductVari");
+
+
+                    const variantToUpdate = dataOfProductVariants?.data?.product?.variants?.edges.find(edge =>
+                        edge.node.selectedOptions?.[0].value === product.model_size
                     );
 
-                    const dataOfProductVariants = await responseProductVariants.json()
+                    if (variantToUpdate) {
+                        const inventoryItemID = variantToUpdate.node.inventoryItem.id;
+                        const locationID = variantToUpdate.node.inventoryItem.inventoryLevels.edges[0]?.node?.location?.id;
+                        const delta = product.quantity - variantToUpdate.node.inventoryQuantity;
 
-                    // console.log("dataOfProductVariants?.data?.product?.variants?.edges:    ", dataOfProductVariants?.data?.product?.variants?.edges);
-
-                    if (dataOfProductVariants?.data?.product?.variants?.edges && dataOfProductVariants?.data?.product?.variants?.edges.length > 0) {
-
-                        let compareCount = 0
-
-                        while (compareCount !== dataOfProductVariants?.data?.product?.variants?.edges.length) {
-                            const edge = dataOfProductVariants?.data?.product?.variants?.edges[compareCount]
-
-                            // console.log("edge.node.selectedOptions?.[0].value === kickscrewProducts[count].model_size------------------------------------------", edge.node.selectedOptions?.[0].value === kickscrewProducts[count].model_size);
-                            // console.log("edge.node.selectedOptions?.[0].value", edge.node.selectedOptions?.[0].value);
-                            // console.log("kickscrewProducts[count].model_size", kickscrewProducts[count].model_size);
-                            // console.log("kickscrewProducts[count].quantity", kickscrewProducts[count].quantity);
-                            // console.log("edge.node.inventoryQuantity", edge.node.inventoryQuantity);
-                            // console.log("kickscrewProducts[count].quantity === edge.node.inventoryQuantity", kickscrewProducts[count].quantity === edge.node.inventoryQuantity);
-                            if (edge.node.selectedOptions?.[0].value === kickscrewProducts[count].model_size) {
-                                console.log("-------------------------------------------------Size is same-------------------------------");
-
-                                if (kickscrewProducts[count].quantity === edge.node.inventoryQuantity) {
-                                    // console.log("-------------------------------------------------Quantity is same no need to update-------------------------------");
-
-                                } else {
-                                    // console.log("kickscrewProducts[count].quantity, edge.node.inventoryQuantity", kickscrewProducts[count].quantity, edge.node.inventoryQuantity);
-
-                                    console.log("-------------------------------------------------Need to update quantity--------------------------");
-                                    // console.log("variant id=========", edge.node.id);
-                                    // console.log("location id=========", edge?.node?.inventoryItem?.inventoryLevels?.edges?.[0]?.node?.location?.id);
-                                    // console.log("edge?.node=========", edge?.node);
+                        console.log("Quantity delta......", delta);
 
 
-                                    const locationID = edge?.node?.inventoryItem?.inventoryLevels?.edges?.[0]?.node?.location?.id || null
-                                    console.log("locationID---------------->", locationID);
-                                    const inventoryItemID = edge?.node?.inventoryItem?.id
-                                    console.log("inventoryItemID---------------->", inventoryItemID);
-                                    const delta = Number(kickscrewProducts[count].quantity) - edge.node.inventoryQuantity
-
-
-                                    if (locationID) {
-
-                                        // const responseOfQuantityUpdate = await admin.graphql(
-                                        //     `#graphql
-                                        //         mutation {
-                                        //             productVariantUpdate(input: {id: "${edge.node.id}", inventoryQuantities: {availableQuantity : ${Number(kickscrewProducts[count].quantity)}, locationId: "${locationID}" } }) {
-                                        //                 productVariant {
-                                        //                     id
-                                        //                     inventoryQuantity
-                                        //                     selectedOptions {
-                                        //                         name
-                                        //                         value
-                                        //                     }
-                                        //                     product {
-                                        //                         id
-                                        //                         title
-                                        //                         legacyResourceId
-                                        //                     }
-                                        //                 }
-                                        //                 userErrors {
-                                        //                     field
-                                        //                     message
-                                        //                 }
-                                        //             }
-                                        //         }`,
-                                        // );
-
-                                        const responseOfQuantityUpdate = await admin.graphql(
-                                            `#graphql
-                                            mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
-                                              inventoryAdjustQuantities(input: $input) {
-                                                userErrors {
-                                                  field
-                                                  message
-                                                }
-                                                inventoryAdjustmentGroup {
-                                                  createdAt
-                                                  reason
-                                                  changes {
-                                                    name
-                                                    delta
-                                                  }
-                                                }
-                                              }
-                                            }`,
-                                            {
-                                                variables: {
-                                                    "input": {
-                                                        "reason": "correction",
-                                                        "name": "available",
-                                                        "changes": [
-                                                            {
-                                                                "delta": delta,
-                                                                "inventoryItemId": inventoryItemID,
-                                                                "locationId": locationID
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                            },
-                                        );
-
-                                        const dataOfQuantityUpdate = await responseOfQuantityUpdate.json();
-
-                                        console.log("dataOfQuantityUpdate", dataOfQuantityUpdate?.data);
-
+                        if (locationID) {
+                            const inventoryAdjustmentMutation = `
+                                #graphql
+                                mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
+                                    inventoryAdjustQuantities(input: $input) {
+                                        userErrors {
+                                            field
+                                            message
+                                        }
+                                        inventoryAdjustmentGroup {
+                                            createdAt
+                                            reason
+                                            changes {
+                                                name
+                                                delta
+                                            }
+                                        }
                                     }
-
                                 }
-
-                            } else {
-                                console.log("-------------------------------------------------Size is not same-------------------------------");
-
-                            }
-                            compareCount++
+                            `;
+                            await graphqlRequest(admin, inventoryAdjustmentMutation, {
+                                input: {
+                                    reason: "correction",
+                                    name: "available",
+                                    changes: [
+                                        {
+                                            delta,
+                                            inventoryItemId: inventoryItemID,
+                                            locationId: locationID
+                                        }
+                                    ]
+                                }
+                            });
                         }
-
-
-                        // const compareQuantity = dataOfProductVariants?.data?.product?.variants?.edges?.map(async (edge) => {
-
-
-                        // })
-                        // console.log("compareQuantity", compareQuantity);
                     }
-
-
-                } else {
-                    // console.log("tagValue doesnt exist");
-
                 }
-
-
-                count++
+            } catch (error) {
+                console.error(`Error processing product ${product.model_number}:`, error);
             }
+        }));
 
-            // ................................end................................................
-            kickscrewCurrentPage++
-        }
-
-        console.log("First Page Products........................", kickscrewProducts?.[0]);
-        console.log("All Products........................", kickscrewProducts.length);
-
-        return json({ message: 'Got Data Successfully!' })
+        console.log("Sync completed successfully. All products have been processed.");
+        return json({ message: 'Got Data Successfully!' });
 
     } catch (error) {
-        console.log("error while syncProducts.......", error);
-        return json({ message: 'error while syncProducts.......' })
+        console.error("Error while syncing products:", error);
+        return json({ message: 'Error while syncing products' });
     }
-
-}
+};

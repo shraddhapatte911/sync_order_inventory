@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://mainland-aged-bleeding-temporary.trycloudflare.com"
+application_url = "https://similar-modifications-thursday-shipped.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_inventory,read_locations,read_orders,read_products,write_inventor
 
 [auth]
 redirect_urls = [
-  "https://mainland-aged-bleeding-temporary.trycloudflare.com/auth/callback",
-  "https://mainland-aged-bleeding-temporary.trycloudflare.com/auth/shopify/callback",
-  "https://mainland-aged-bleeding-temporary.trycloudflare.com/api/auth/callback"
+  "https://similar-modifications-thursday-shipped.trycloudflare.com/auth/callback",
+  "https://similar-modifications-thursday-shipped.trycloudflare.com/auth/shopify/callback",
+  "https://similar-modifications-thursday-shipped.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://mainland-aged-bleeding-temporary.trycloudflare.com"
+url = "https://similar-modifications-thursday-shipped.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 
