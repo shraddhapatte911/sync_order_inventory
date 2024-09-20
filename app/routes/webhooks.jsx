@@ -2,7 +2,7 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
 export const action = async ({ request }) => {
-  const { topic, shop, session, admin } = await authenticate.webhook(request);
+  const { topic, shop, session, admin, payload } = await authenticate.webhook(request);
 
   if (!admin && topic !== "SHOP_REDACT") {
     // The admin context isn't returned if the webhook fired after a shop was uninstalled.
@@ -23,6 +23,12 @@ export const action = async ({ request }) => {
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":
+    case "PRODUCTS_UPDATE":
+      console.log("payload of PRODUCTS_UPDATE ", payload);
+
+      break;
+
+
     default:
       throw new Response("Unhandled webhook topic", { status: 404 });
   }

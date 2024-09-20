@@ -3,7 +3,7 @@ import { authenticate } from "../shopify.server";
 import fetchListedProducts from "../apis/fetchListedProducts";
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000; // 1 second delay incase any aerror.
+const RETRY_DELAY_MS = 1000;
 
 console.log("sync process has been started!");
 
@@ -20,16 +20,16 @@ const graphqlRequest = async (admin, query, variables = {}) => {
         } catch (error) {
             if (attempt === MAX_RETRIES) {
                 console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
-                throw error; // Rethrow error after last attempt.
+                throw error; 
             }
             console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); // Waiting before retrying processs.
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); 
         }
     }
 };
 
 export const loader = async ({ request }) => {
-    console.log("sync process has been started!");
+    // console.log("sync process has been started!");
     try {
         const { session, admin } = await authenticate.admin(request);
         const api_key = process.env.crewsupply_api_key;
@@ -47,8 +47,8 @@ export const loader = async ({ request }) => {
             kickscrewCurrentPage++;
         }
 
-        console.log("First Product:", totalProductsToUpdate[0]);
-        console.log("Total Products Updated:", totalProductsToUpdate.length);
+        // console.log("First Product:", totalProductsToUpdate[0]);
+        // console.log("Total Products Updated:", totalProductsToUpdate.length);
 
         await Promise.all(totalProductsToUpdate.map(async (product) => {
             try {
@@ -105,11 +105,12 @@ export const loader = async ({ request }) => {
                         }
                     `;
                     const dataOfProductVariants = await graphqlRequest(admin, productVariantsQuery);
-                    console.log("sssssss dataOfProductVari");
+                    // console.log("sssssss dataOfProductVari");
 
-
+                    console.log("dataOfProductVariants?.data?.product?.variants?.edges",dataOfProductVariants?.data?.product?.variants?.edges?.[0].node.selectedOptions);
+                    
                     const variantToUpdate = dataOfProductVariants?.data?.product?.variants?.edges.find(edge =>
-                        edge.node.selectedOptions?.[0].value === product.model_size
+                        edge.node.selectedOptions?.[0]?.value === product.model_size
                     );
 
                     if (variantToUpdate) {
@@ -117,7 +118,7 @@ export const loader = async ({ request }) => {
                         const locationID = variantToUpdate.node.inventoryItem.inventoryLevels.edges[0]?.node?.location?.id;
                         const delta = product.quantity - variantToUpdate.node.inventoryQuantity;
 
-                        console.log("Quantity delta......", delta);
+                        // console.log("Quantity delta......", delta);
 
 
                         if (locationID) {

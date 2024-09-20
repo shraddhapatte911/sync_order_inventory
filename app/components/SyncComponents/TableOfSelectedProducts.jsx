@@ -30,10 +30,10 @@ export default function TableOfSelectedProducts({ products, setCurrentPage, hasN
         />
     );
 
-    useEffect(() => {
-        console.log("products------------------<<--->>", products);
+    // useEffect(() => {
+    //     console.log("products------------------<<--->>", products);
 
-    }, [])
+    // }, [])
 
 
     const rowMarkup = products?.map(
