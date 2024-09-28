@@ -5,7 +5,7 @@ import fetchListedProducts from "../apis/fetchListedProducts";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
-console.log("sync process has been started!");
+console.log("sync process has been started of shopify products!");
 
 
 const graphqlRequest = async (admin, query, variables = {}) => {
@@ -19,7 +19,7 @@ const graphqlRequest = async (admin, query, variables = {}) => {
             return data;
         } catch (error) {
             if (attempt === MAX_RETRIES) {
-                console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
+                console.error(`Failed after ${MAX_RETRIES} attempts :`, error);
                 throw error; 
             }
             console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
@@ -166,7 +166,7 @@ export const loader = async ({ request }) => {
         return json({ message: 'Got Data Successfully!' });
 
     } catch (error) {
-        console.error("Error while syncing products:", error);
-        return json({ message: 'Error while syncing products' });
+        console.error("Error while updating shopify products:", error);
+        return json({ message: 'Error while updating shopify products' });
     }
 };

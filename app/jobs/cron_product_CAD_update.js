@@ -1,58 +1,9 @@
 import cron from 'node-cron';
 import prisma from '../db.server';
 import fetchListedProducts from '../apis/fetchListedProducts';
+import { graphqlRequest } from '../components/graphqlRequest';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-const graphqlRequest = async (shopData, query, variables) => {
-    // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", query, "       ", variables);
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        // console.log("shopData[0]?.shop----------------->", shopData[0]?.shop);
-        // console.log("shopData[0]?.accessToken------------>", shopData[0]?.accessToken);
-
-        try {
-            const response = await fetch(`https://${shopData[0]?.shop}/admin/api/2024-07/graphql.json`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Shopify-Access-Token": shopData[0]?.accessToken
-                },
-                body: JSON.stringify({
-                    query: query, ...(variables ? variables : {})
-                })
-            })
-
-            const data = await response.json();
-            // console.log('data===============================================+>', data);
-
-
-            if (data.errors) {
-                if (attempt === MAX_RETRIES) {
-                    console.error(`Failed after ${MAX_RETRIES} attempts:`, data.errors);
-
-                }
-                console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, data.errors);
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-            }
-
-            if (!response.ok) {
-                throw new Error(`GraphQL error: ${data?.errors?.map(e => e.message).join(', ')}`);
-            }
-            return data;
-        } catch (error) {
-            if (attempt === MAX_RETRIES) {
-                console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
-                throw error;
-            }
-            console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-        }
-    }
-};
-
+// const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function cron_product_CAD_update() {
 
@@ -60,6 +11,9 @@ export async function cron_product_CAD_update() {
     const task = async () => {
         try {
             const shopData = await prisma.session.findMany()
+
+            if (!shopData.length) return
+
             console.log('Task executed at:', new Date(), shopData);
             console.log("sync process has been started of cron!");
             const api_key = process.env.crewsupply_api_key;
@@ -79,10 +33,11 @@ export async function cron_product_CAD_update() {
                 kickscrewCurrentPage++;
             }
 
-            console.log("First Product:", totalProductsToUpdate[0]);
-            console.log("Total Products Updated:", totalProductsToUpdate.length);
+            // console.log("First Product:", totalProductsToUpdate[0]);
+            // console.log("Total Products To Update:", totalProductsToUpdate.length);
 
             await Promise.all(totalProductsToUpdate.map(async (product) => {
+                // console.log("product.model_number", product.model_number);
 
                 try {
                     const productTagQuery = `

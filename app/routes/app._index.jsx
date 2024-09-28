@@ -12,9 +12,7 @@ import {
   InlineStack,
 } from "@shopify/polaris";
 import Placeholder from "../components/Placeholder";
-import ProductsSync from "../components/SyncComponents/ProductsSync";
-
-
+import ProductsAndOrdersSync from "../components/SyncComponents/ProductsAndOrdersSync";
 
 export default function Index() {
 
@@ -24,7 +22,7 @@ export default function Index() {
 
       <Placeholder
         component={
-          <ProductsSync />
+          <ProductsAndOrdersSync />
         }
         marginTop='0'
         paddingTop='70px'

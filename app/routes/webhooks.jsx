@@ -1,5 +1,6 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import updateKickscrewProducts from "../apis/updateKickscrewProducts";
 
 export const action = async ({ request }) => {
   const { topic, shop, session, admin, payload } = await authenticate.webhook(request);
@@ -25,6 +26,38 @@ export const action = async ({ request }) => {
     case "SHOP_REDACT":
     case "PRODUCTS_UPDATE":
       console.log("payload of PRODUCTS_UPDATE ", payload);
+      return "test"
+
+      // await Promise.all(payload?.variants.map(async (variant) => {
+      try {
+        let productTag;
+        const api_key = process.env.crewsupply_api_key;
+        // const regex = /kickscrew-(\S+)/;
+        const regex = /kickscrew-(\S+?)(?:,|\s|$)/;
+        const match = payload?.tags?.match(regex);
+        if (match) {
+          // console.log("match",match);
+          productTag = match[1];
+          // console.log("productTag ",productTag);
+        } else {
+          console.log('No match found for tag');
+        }
+
+        if (productTag) {
+
+          const updatedProductDataRes = await updateKickscrewProducts(payload?.variants, productTag, api_key)
+
+          console.log(" updatedProductDataRes.........    ", updatedProductDataRes);
+          
+        } else {
+          console.log("productTag not found in the payload matching 'kickscrew-' ", productTag);
+        }
+
+
+      } catch (error) {
+        console.log("error occured on product update", error);
+      }
+      // }))
 
       break;
 

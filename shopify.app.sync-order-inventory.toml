@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://c-streams-davis-motion.trycloudflare.com"
+application_url = "https://chemical-injury-alarm-dairy.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_inventory,read_locations,read_orders,read_products,write_inventor
 
 [auth]
 redirect_urls = [
-  "https://c-streams-davis-motion.trycloudflare.com/auth/callback",
-  "https://c-streams-davis-motion.trycloudflare.com/auth/shopify/callback",
-  "https://c-streams-davis-motion.trycloudflare.com/api/auth/callback"
+  "https://chemical-injury-alarm-dairy.trycloudflare.com/auth/callback",
+  "https://chemical-injury-alarm-dairy.trycloudflare.com/auth/shopify/callback",
+  "https://chemical-injury-alarm-dairy.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://c-streams-davis-motion.trycloudflare.com"
+url = "https://chemical-injury-alarm-dairy.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 

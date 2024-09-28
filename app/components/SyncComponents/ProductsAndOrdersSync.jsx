@@ -4,9 +4,10 @@ import TableOfSelectedProducts from './TableOfSelectedProducts';
 import Placeholder from '../Placeholder';
 import { PlusIcon } from '@shopify/polaris-icons';
 import ModalComponent from '../ModalComponent';
-import syncListedProducts from '../../apis/syncListedProducts';
+import updateShopifyProducts from '../../apis/updateShopifyProducts';
+import createShopifyOrder from '../../apis/createShopifyOrder';
 
-export default function ProductsSync() {
+export default function ProductsAndOrdersSync() {
     const [resourcetype, setResourceType] = useState('product');
     const [selectedProducts, setSelectedProducts] = useState([])
     const [importItems, setImportItems] = useState([])
@@ -177,8 +178,19 @@ export default function ProductsSync() {
 
     const handleSyncProducts = useCallback(() => {
         try {
-            syncListedProducts()
-            console.log("hit syncListedProducts");
+            updateShopifyProducts()
+            // console.log("hit updateShopifyProducts");
+
+        } catch (error) {
+            console.log("error on handleSyncProducts", error);
+
+        }
+    }, [])
+
+    const handleSyncOrders = useCallback(() => {
+        try {
+            createShopifyOrder()
+            // console.log("hit handleSyncOrders");
 
         } catch (error) {
             console.log("error on handleSyncProducts", error);
@@ -270,7 +282,7 @@ export default function ProductsSync() {
 
                                             <Divider borderColor="transparent" />
 
-                                            <Button variant="primary" onClick={() => { }}>
+                                            <Button variant="primary" onClick={handleSyncOrders}>
                                                 Sync Orders
                                             </Button>
                                         </Card>
