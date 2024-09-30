@@ -22,7 +22,6 @@ export const restApiRequest = async (shopData, bodyData, endPoint) => {
             const data = await response.json();
             console.log('data of orders create api===============================================+>', data);
 
-
             if (data.errors) {
                 if (attempt === MAX_RETRIES) {
                     console.error(`Failed after ${MAX_RETRIES} attempts:`, data.errors);

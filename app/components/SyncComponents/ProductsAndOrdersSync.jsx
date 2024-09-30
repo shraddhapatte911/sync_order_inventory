@@ -176,27 +176,22 @@ export default function ProductsAndOrdersSync() {
     //     return currentPage * itemsPerPage + index + 1;
     // };
 
-    const handleSyncProducts = useCallback(() => {
+    const handleSync = useCallback(async (type) => {
         try {
-            updateShopifyProducts()
-            // console.log("hit updateShopifyProducts");
+            const data = type === "product" ? await updateShopifyProducts() : await createShopifyOrder();
 
+            if (data?.status === "finished") {
+                await fetchListedProducts();
+            } else {
+                const actionMessage = type === "product" ? "Products update failed:" : "Orders creation failed";
+                console.log(actionMessage, data?.message);
+            }
         } catch (error) {
-            console.log("error on handleSyncProducts", error);
-
+            console.log("Error in handleSync for", type === "product" ? "products:" : "orders:", error);
         }
-    }, [])
+    }, []);
 
-    const handleSyncOrders = useCallback(() => {
-        try {
-            createShopifyOrder()
-            // console.log("hit handleSyncOrders");
 
-        } catch (error) {
-            console.log("error on handleSyncProducts", error);
-
-        }
-    }, [])
 
     return (
         <>
@@ -271,7 +266,7 @@ export default function ProductsAndOrdersSync() {
 
                                             <Placeholder
                                                 component={
-                                                    <Button variant="primary" onClick={handleSyncProducts}>
+                                                    <Button variant="primary" onClick={() => handleSync('product')}>
                                                         Sync Products
                                                     </Button>
                                                 }
@@ -282,7 +277,7 @@ export default function ProductsAndOrdersSync() {
 
                                             <Divider borderColor="transparent" />
 
-                                            <Button variant="primary" onClick={handleSyncOrders}>
+                                            <Button variant="primary" onClick={() => handleSync('order')}>
                                                 Sync Orders
                                             </Button>
                                         </Card>

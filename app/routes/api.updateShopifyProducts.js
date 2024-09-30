@@ -3,32 +3,33 @@ import { authenticate } from "../shopify.server";
 import fetchListedProducts from "../apis/fetchListedProducts";
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
-
-console.log("sync process has been started of shopify products!");
-
+const RETRY_DELAY_MS = 3000;
 
 const graphqlRequest = async (admin, query, variables = {}) => {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
             const response = await admin.graphql(query, { variables });
             const data = await response.json();
+
             if (!response.ok) {
-                throw new Error(`GraphQL error: ${data.errors?.map(e => e.message).join(', ')}`);
+                const errorMessages = data.errors?.map(e => e.message).join(', ') || 'Unknown error';
+                throw new Error(`GraphQL error: ${errorMessages}`);
             }
+
             return data;
         } catch (error) {
             if (attempt === MAX_RETRIES) {
-                console.error(`Failed after ${MAX_RETRIES} attempts :`, error);
-                throw error; 
+                console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
+                throw error;
             }
             console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); 
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
         }
     }
 };
 
 export const loader = async ({ request }) => {
+    console.log("sync process has been started of shopify products!");
     // console.log("sync process has been started!");
     try {
         const { session, admin } = await authenticate.admin(request);
@@ -52,6 +53,9 @@ export const loader = async ({ request }) => {
 
         await Promise.all(totalProductsToUpdate.map(async (product) => {
             try {
+
+                console.log("product.model_number}", product.model_number);
+
                 const productTagQuery = `
                     #graphql
                     query {
@@ -107,8 +111,11 @@ export const loader = async ({ request }) => {
                     const dataOfProductVariants = await graphqlRequest(admin, productVariantsQuery);
                     // console.log("sssssss dataOfProductVari");
 
-                    console.log("dataOfProductVariants?.data?.product?.variants?.edges",dataOfProductVariants?.data?.product?.variants?.edges?.[0].node.selectedOptions);
-                    
+                    // console.log("tagValue...............", tagValue);
+
+
+                    // console.log("dataOfProductVariants?.data?.product?.variants?.edges",dataOfProductVariants?.data?.product?.variants?.edges?.[0].node.selectedOptions);
+
                     const variantToUpdate = dataOfProductVariants?.data?.product?.variants?.edges.find(edge =>
                         edge.node.selectedOptions?.[0]?.value === product.model_size
                     );

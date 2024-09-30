@@ -99,7 +99,8 @@ export async function cron_orders_shopify_create() {
 
                 try {
                     const nameArray = order.recipient_name.split(" ")
-
+                    console.log("order.mobile",order.mobile, "    type    ", typeof order.mobile);
+                    
                     const orderCreateReqBody = {
                         "order": {
                             "line_items": [
@@ -126,11 +127,11 @@ export async function cron_orders_shopify_create() {
                                     ...(order.status === "order.completed" ? { "fulfillment_status": "fulfilled" } : {})
                                 }
                             ],
+                            // "email": "jane@example.com",
+                            // "phone": order.mobile,
                             "customer": {
                                 "first_name": nameArray.slice(0, -1).join(" "),
                                 "last_name": nameArray[nameArray.length - 1],
-                                "phone": order.mobile
-                                // "email": "paul.norman@example.com"
                             },
                             "shipping_address": {
                                 "first_name": nameArray.slice(0, -1).join(" "),
@@ -158,30 +159,30 @@ export async function cron_orders_shopify_create() {
             console.log("Sync completed successfully. All orders have been created on shopify store using cron.");
 
         } catch (error) {
-            console.error("Error while syncing products:", error);
+            console.error("Error while syncing orders:", error);
         }
     };
 
-    try {
-        task()
-    } catch (error) {
-        console.log("error on task  cron orders.........", error);
-    }
+    // try {
+    //     task()
+    // } catch (error) {
+    //     console.log("error on task  cron orders.........", error);
+    // }
 
     // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
     // const scheduledTime = '0 * * * *';  // cron job to run every hour
 
-    // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
+    const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 
     // // const scheduledTime = '*/15 * * * * *' // to run every 10 seconds
 
-    // const scheduledJob = cron.schedule(scheduledTime, task);
+    const scheduledJob = cron.schedule(scheduledTime, task);
 
-    // scheduledJob.on('error', (err) => {
-    //     console.error('Error in cron scheduling of cron_orders_shopify_create:', err.message);
+    scheduledJob.on('error', (err) => {
+        console.error('Error in cron scheduling of cron_orders_shopify_create:', err.message);
 
-    // });
+    });
 
     console.log('Cron job scheduled to run every 2 hours of cron_orders_shopify_create');
 

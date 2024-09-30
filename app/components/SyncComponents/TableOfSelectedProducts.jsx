@@ -37,7 +37,7 @@ export default function TableOfSelectedProducts({ products, setCurrentPage, hasN
 
 
     const rowMarkup = products?.map(
-        ({ model_no_id, rowNumber, title, image, brand, category, quantity }, index) => (
+        ({ model_no_id, rowNumber, title, image, brand, category, quantity, model_size, primary_size_code }, index) => (
             <IndexTable.Row
                 id={model_no_id}
                 key={model_no_id}
@@ -69,6 +69,9 @@ export default function TableOfSelectedProducts({ products, setCurrentPage, hasN
                 </IndexTable.Cell>
                 <IndexTable.Cell>
                     {quantity}
+                </IndexTable.Cell>
+                <IndexTable.Cell>
+                    {`${primary_size_code}  ${model_size}`}
                 </IndexTable.Cell>
                 <IndexTable.Cell>
                     <Thumbnail source={image} size="large" alt={title} />
@@ -115,6 +118,7 @@ export default function TableOfSelectedProducts({ products, setCurrentPage, hasN
                         { title: 'Brand' },
                         { title: 'Category' },
                         { title: 'Quantity' },
+                        { title: 'Size' },
                         { title: 'Image' }
                     ]}
                     // bulkActions={bulkActions}
