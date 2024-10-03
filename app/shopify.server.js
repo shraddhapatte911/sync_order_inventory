@@ -44,7 +44,7 @@ const shopify = shopifyApp({
     : {}),
 });
 
-cron_product_CAD_update()  
+// cron_product_CAD_update()  
 cron_orders_shopify_create()
 
 export default shopify;

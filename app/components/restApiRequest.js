@@ -1,7 +1,7 @@
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
-export const restApiRequest = async (shopData, bodyData, endPoint) => {
+export const restApiRequest = async (shopData, bodyData, endPoint, method = "POST") => {
     // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", query, "       ", variables);
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         // console.log("shopData[0]?.shop----------------->", shopData[0]?.shop);
@@ -11,23 +11,23 @@ export const restApiRequest = async (shopData, bodyData, endPoint) => {
             const apiURL = `https://${shopData[0]?.shop}${endPoint}`
 
             const response = await fetch(apiURL, {
-                method: "POST",
+                method,
                 headers: {
                     "Content-Type": "application/json",
                     "X-Shopify-Access-Token": shopData[0]?.accessToken
                 },
-                body: JSON.stringify(bodyData)
+                ...(method === "GET" ? {} : { body: JSON.stringify(bodyData) })
             })
 
             const data = await response.json();
-            console.log('data of orders create api===============================================+>', data);
+            // console.log('data of orders create api===============================================+>', data);
 
             if (data.errors) {
                 if (attempt === MAX_RETRIES) {
                     console.error(`Failed after ${MAX_RETRIES} attempts:`, data.errors);
 
                 }
-                console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, data.errors);
+                console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) data.errors:`, data.errors);
                 await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
             }
 

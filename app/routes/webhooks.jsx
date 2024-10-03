@@ -25,8 +25,8 @@ export const action = async ({ request }) => {
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":
     case "PRODUCTS_UPDATE":
-      console.log("payload of PRODUCTS_UPDATE ", payload);
-      // return "test"
+      // console.log("payload of PRODUCTS_UPDATE ", payload);
+      return "test"
 
       // await Promise.all(payload?.variants.map(async (variant) => {
       try {

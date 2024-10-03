@@ -59,26 +59,27 @@ export async function cron_product_CAD_update() {
 
                     if (tagValue) {
                         const productVariantsQuery = `
-                        query {
-                            product(id: "${tagValue}") {
-                                title
-                                variants(first: 250) {
-                                    edges {
-                                        node {
-                                            id
-                                            inventoryQuantity
-                                            selectedOptions {
-                                                name
-                                                value
-                                            }
-                                            inventoryItem {
+                            query {
+                                product(id: "${tagValue}") {
+                                    title
+                                    variants(first: 250) {
+                                        edges {
+                                            node {
                                                 id
-                                                inventoryLevels(first: 10) {
-                                                    edges {
-                                                        node {
-                                                            id
-                                                            location {
+                                                inventoryQuantity
+                                                selectedOptions {
+                                                    name
+                                                    value
+                                                }
+                                                inventoryItem {
+                                                    id
+                                                    inventoryLevels(first: 10) {
+                                                        edges {
+                                                            node {
                                                                 id
+                                                                location {
+                                                                    id
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -88,8 +89,8 @@ export async function cron_product_CAD_update() {
                                     }
                                 }
                             }
-                        }
-                    `;
+                        `;
+
                         const dataOfProductVariants = await graphqlRequest(shopData, productVariantsQuery);
 
                         const variantToUpdate = dataOfProductVariants?.data?.product?.variants?.edges.find(edge =>
@@ -112,24 +113,26 @@ export async function cron_product_CAD_update() {
                             // console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
 
                             if (locationID) {
+                                
                                 const inventoryAdjustmentMutation = `
-                                mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
-                                    inventoryAdjustQuantities(input: $input) {
-                                        userErrors {
-                                            field
-                                            message
-                                        }
-                                        inventoryAdjustmentGroup {
-                                            createdAt
-                                            reason
-                                            changes {
-                                                name
-                                                delta
+                                    mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
+                                        inventoryAdjustQuantities(input: $input) {
+                                            userErrors {
+                                                field
+                                                message
+                                            }
+                                            inventoryAdjustmentGroup {
+                                                createdAt
+                                                reason
+                                                changes {
+                                                    name
+                                                    delta
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            `;
+                                `;
+
                                 await graphqlRequest(shopData, inventoryAdjustmentMutation, {
                                     variables: {
                                         input: {

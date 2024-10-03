@@ -28,13 +28,17 @@ const updateKickscrewProducts = async (variants, tag, api_key) => {
 
         const items = variants.map(variant => {
             const filteredData = sizeDataMap.get(variant.option1);
+            // console.log("variant", variant);
+
+            // console.log("filteredData", filteredData);
+
             if (filteredData) {
                 return {
                     model_no: tag,
                     size_system: filteredData.size_system,
                     size: variant.option1,
                     qty: variant.inventory_quantity,
-                    price: filteredData.price,
+                    price: (Number(filteredData.price) === 0 && variant.inventory_quantity > 0) ? variant.price : filteredData.price,
                     brand: filteredData.brand,
                     ext_ref: "",
                     sku: variant.sku
@@ -47,9 +51,7 @@ const updateKickscrewProducts = async (variants, tag, api_key) => {
             return `No valid variants found for tag: ${tag}`;
         }
 
-
         const quantityUpdateBody = { items };
-
         // console.log("quantityUpdateBody", quantityUpdateBody);
 
         const quantityUpdateResponse = await fetch("https://api.crewsupply.kickscrew.com/sapi/v2/stock/batch-update", {

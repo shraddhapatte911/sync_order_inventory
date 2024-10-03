@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://beach-phantom-harrison-oz.trycloudflare.com"
+application_url = "https://representations-laboratories-poly-loss.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,20 +13,20 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_inventory,read_locations,read_orders,read_products,write_inventory,write_locations,write_orders,write_products"
+scopes = "read_inventory,read_locations,read_orders,read_products,write_assigned_fulfillment_orders,write_inventory,write_locations,write_merchant_managed_fulfillment_orders,write_orders,write_products"
 
 [auth]
 redirect_urls = [
-  "https://beach-phantom-harrison-oz.trycloudflare.com/auth/callback",
-  "https://beach-phantom-harrison-oz.trycloudflare.com/auth/shopify/callback",
-  "https://beach-phantom-harrison-oz.trycloudflare.com/api/auth/callback"
+  "https://representations-laboratories-poly-loss.trycloudflare.com/auth/callback",
+  "https://representations-laboratories-poly-loss.trycloudflare.com/auth/shopify/callback",
+  "https://representations-laboratories-poly-loss.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://beach-phantom-harrison-oz.trycloudflare.com"
+url = "https://representations-laboratories-poly-loss.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 

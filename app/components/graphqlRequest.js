@@ -1,14 +1,14 @@
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 3000;
 
-export const graphqlRequest = async (shopData, query, variables) => {
+export const graphqlRequest = async (shopData, query, variables, api_version = "2024-07") => {
     // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", shopData, "     ", query, "       ", variables);
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         // console.log("shopData[0]?.shop----------------->", shopData[0]?.shop);
         // console.log("shopData[0]?.accessToken------------>", shopData[0]?.accessToken);
 
         try {
-            const response = await fetch(`https://${shopData[0]?.shop}/admin/api/2024-07/graphql.json`, {
+            const response = await fetch(`https://${shopData[0]?.shop}/admin/api/${api_version}/graphql.json`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

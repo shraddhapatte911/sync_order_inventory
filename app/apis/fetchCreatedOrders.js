@@ -4,7 +4,7 @@ const fetchCreatedOrders = async (page_no, api_key) => {
     // console.log("page_no, page_size, api_key", page_no, "    ", page_size, "     ", api_key);
 
     try {
-        const urlWithDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&date_from=${"2024-09-15T13:51:14.000Z"}&date_to=${"2024-09-15T13:51:14.000Z"}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
+        const urlWithDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&date_from=${"2024-08-02T02:33:14.000Z"}&date_to=${"2024-08-02T02:33:14.000Z"}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
         const urlWithoutDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
         const responseOfOrders = await fetch(urlWithDateRange, {
             method: "GET",
