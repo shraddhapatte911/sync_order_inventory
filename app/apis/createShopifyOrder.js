@@ -8,7 +8,7 @@ async function createShopifyOrder() {
             return { status: "finished", message: "Order created successfully", };
         } else {
             const errorData = await responseOfCreateOrders.json();
-            console.error("Error creating order:", errorData);
+            // console.error("Error creating order:", errorData);
             return { status: "error", message: errorData.message || "Failed to create order" };
         }
     } catch (error) {

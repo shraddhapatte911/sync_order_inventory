@@ -1,5 +1,5 @@
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 3000;
+const RETRY_DELAY_MS = 10000;
 
 export const graphqlRequest = async (shopData, query, variables, api_version = "2024-07") => {
     // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", shopData, "     ", query, "       ", variables);
@@ -33,9 +33,22 @@ export const graphqlRequest = async (shopData, query, variables, api_version = "
             }
 
             if (!response.ok) {
-                // throw new Error(`GraphQL error: ${data?.errors?.map(e => e.message).join(', ')}`);
-                console.log("data of errors", data);
+                console.error("Response isn't ok of graphql api:", data);
 
+                if (data.errors && data.errors.includes('API rate limit')) {
+                    const retryAfter = 60 * 1000; // 60 seconds
+                    console.warn(`Rate limit exceeded. Retrying request after ${retryAfter / 1000} seconds.`);
+                    await new Promise(resolve => setTimeout(resolve, retryAfter));
+                    continue; 
+                }
+
+                if (attempt === MAX_RETRIES) {
+                    throw new Error(`Failed response isn't ok after ${MAX_RETRIES} attempts: ${JSON.stringify(data.errors)}`);
+                }
+
+                console.warn(`Retrying request due to error (${attempt}/${MAX_RETRIES}):`, data.errors);
+                await new Promise(resolve => setTimeout(resolve, DELAY_DUR)); 
+                continue; 
             }
             return data;
         } catch (error) {

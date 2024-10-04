@@ -1,14 +1,10 @@
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
+const DELAY_DUR = 5000
 
 export const restApiRequest = async (shopData, bodyData, endPoint, method = "POST") => {
-    // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", query, "       ", variables);
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        // console.log("shopData[0]?.shop----------------->", shopData[0]?.shop);
-        // console.log("shopData[0]?.accessToken------------>", shopData[0]?.accessToken);
-
         try {
-            const apiURL = `https://${shopData[0]?.shop}${endPoint}`
+            const apiURL = `https://${shopData[0]?.shop}${endPoint}`;
 
             const response = await fetch(apiURL, {
                 method,
@@ -17,33 +13,37 @@ export const restApiRequest = async (shopData, bodyData, endPoint, method = "POS
                     "X-Shopify-Access-Token": shopData[0]?.accessToken
                 },
                 ...(method === "GET" ? {} : { body: JSON.stringify(bodyData) })
-            })
+            });
 
             const data = await response.json();
-            // console.log('data of orders create api===============================================+>', data);
-
-            if (data.errors) {
-                if (attempt === MAX_RETRIES) {
-                    console.error(`Failed after ${MAX_RETRIES} attempts:`, data.errors);
-
-                }
-                console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) data.errors:`, data.errors);
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-            }
 
             if (!response.ok) {
-                // throw new Error(`GraphQL error: ${data?.errors?.map(e => e.message).join(', ')}`);
-                console.log("data of errors", data);
+                console.error("Response isn't ok of rest api:", data);
 
+                if (data.errors && data.errors.includes('API rate limit')) {
+                    const retryAfter = 60 * 1000; // 60 seconds
+                    console.warn(`Rate limit exceeded. Retrying request after ${retryAfter / 1000} seconds.`);
+                    await new Promise(resolve => setTimeout(resolve, retryAfter));
+                    continue; 
+                }
+
+                if (attempt === MAX_RETRIES) {
+                    throw new Error(`Failed response isn't ok after ${MAX_RETRIES} attempts: ${JSON.stringify(data.errors)}`);
+                }
+
+                console.warn(`Retrying request due to error (${attempt}/${MAX_RETRIES}):`, data.errors);
+                await new Promise(resolve => setTimeout(resolve, DELAY_DUR)); 
+                continue; 
             }
-            return data;
+
+            return data; 
         } catch (error) {
             if (attempt === MAX_RETRIES) {
                 console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
                 throw error;
             }
-            console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            console.warn(`Retrying request due to error (${attempt}/${MAX_RETRIES}):`, error);
+            await new Promise(resolve => setTimeout(resolve, DELAY_DUR)); 
         }
     }
 };

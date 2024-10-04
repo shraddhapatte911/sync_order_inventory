@@ -11,7 +11,7 @@ export const loader = async ({ request, params }) => {
         const page_size = parseInt(params.limit, 10);
         const api_key = process.env.crewsupply_api_key;
 
-        const { totalProducts, gotProducts } = await fetchListedProducts(page_no, page_size, api_key);
+        const { totalProducts, gotProducts } = await fetchListedProducts(page_no, page_size, api_key, 1);
 
         const hasNextPage = (page_no + 1) * page_size < totalProducts;
         const hasPrevPage = page_no > 0;

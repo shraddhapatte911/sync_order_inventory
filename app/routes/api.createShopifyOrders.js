@@ -4,158 +4,228 @@ import { graphqlRequest } from "../components/graphqlRequest";
 import { restApiRequest } from "../components/restApiRequest";
 import { json } from "@remix-run/node";
 
+const ORDERS_PER_PAGE = 100;
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const loader = async ({ request }) => {
-
     try {
-        const shopData = await prisma.session.findMany()
+        const shopData = await prisma.session.findMany();
+        if (!shopData.length) return json({ message: "No shop data found." });
 
-        if (!shopData.length) return
+        const apiKey = process.env.crewsupply_api_key;
+        if (!apiKey) return json({ message: "API key is empty." });
 
-        // console.log('Task executed at:', new Date(), shopData);
-        console.log("sync order has been started of cron!");
-        const api_key = process.env.crewsupply_api_key;
-        // console.log("api_key", api_key);
-
+        console.log("Sync order has started through sync button!");
 
         let totalOrdersToCreate = [];
-        let kickscrewCurrentPage = 0;
-        const kickscrewOrdersPerPage = 100;
-        let kickscrewHasNextPage = true;
+        let currentPage = 0;
+        let hasNextPage = true;
 
-        while (kickscrewHasNextPage) {
-            const { totalOrders, gotOrders } = await fetchCreatedOrders(kickscrewCurrentPage, api_key);
+        while (hasNextPage) {
+            const { totalOrders, gotOrders } = await fetchCreatedOrders(currentPage, apiKey);
             totalOrdersToCreate.push(...gotOrders);
-
-            kickscrewHasNextPage = (kickscrewCurrentPage + 1) * kickscrewOrdersPerPage < totalOrders;
-            kickscrewCurrentPage++;
+            hasNextPage = (currentPage + 1) * ORDERS_PER_PAGE < totalOrders;
+            currentPage++;
         }
 
-        // console.log("First Order:", totalOrdersToCreate[0]);
-        console.log("Total Orders To Update:", totalOrdersToCreate.length);
+        await Promise.all(totalOrdersToCreate.map(processOrder(shopData)));
 
-        await Promise.all(totalOrdersToCreate.map(async (order) => {
-            // console.log("order.order_id", order);
+        console.log("Sync completed successfully. All orders have been created on Shopify store.");
+        return json({ message: "Successfully created orders!" });
 
-            const productTagQuery = `
-                        query {
-                            products(first: 10, query: "tag:${order.model_no}") {
-                                edges {
-                                    node {
-                                        id
-                                        title
-                                        handle
-                                        totalInventory
-                                        variants(first: 250) {
-                                            edges {
-                                                node {
-                                                    id
-                                                    selectedOptions {
-                                                        name
-                                                        value
-                                                    }
-                                                }
-                                            }
-                                        }
+    }
+    catch (error) {
+        console.error("Error during order creation:", error);
+        return json({ error: "Error occurred while creating orders!" });
+    }
+};
+
+const processOrder = (shopData) => async (order) => {
+    try {
+        const variantId = await getVariantId(shopData, order);
+        variantId ?
+            console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
+        if (!variantId) return console.warn(`Variant not found for model_no: ${order.model_no}`);
+
+        const existingOrder = await findExistingOrder(shopData, order.order_id);
+        if (existingOrder) {
+            await updateExistingOrder(shopData, existingOrder, order);
+        } else {
+            await createNewOrder(shopData, order, variantId);
+        }
+    } catch (error) {
+        console.error(`Error processing order ${order.order_id}:`, error);
+    }
+};
+
+const getVariantId = async (shopData, order) => {
+    const productTagQuery = `
+        query {
+            products(first: 10, query: "tag:${order.model_no}") {
+                edges {
+                    node {
+                        id
+                        variants(first: 250) {
+                            edges {
+                                node {
+                                    id
+                                    selectedOptions {
+                                        name
+                                        value
                                     }
                                 }
                             }
                         }
-                    `;
-            const dataOfProductTag = await graphqlRequest(shopData, productTagQuery);
-            // console.log("dataOfProductTag", dataOfProductTag.data.products.edges);
-
-            let varantIdForOrder;
-
-            if (dataOfProductTag.data.products.edges.length) {
-                if (dataOfProductTag.data.products.edges[0].node.variants.edges.length) {
-                    const filteredSize = dataOfProductTag.data.products.edges[0].node.variants.edges.map(element => {
-                        // console.log("element", element);
-
-                        if (element.node.selectedOptions.length) {
-                            // console.log(`order.size.displayValue.split(" ")[1]`, order.size.displayValue.split(" ")[1]);
-
-                            return element.node.selectedOptions[0].value === order.size.displayValue.split(" ")[1] ? { id: element.node.id, size: element.node.selectedOptions[0].value } : null
-                        } else {
-                            console.warn("no options found on cron_orders for the modal_no:", order.model_no);
-                        }
-                    }).filter(e => e !== null);
-
-                    // console.log("filteredSize on cron_order", filteredSize);
-                    varantIdForOrder = Number(filteredSize[0].id.slice(29))
-                    // console.log("varantIdForOrder",varantIdForOrder , "  ", typeof varantIdForOrder);
-
-                } else {
-                    console.warn("no variant found cron_orders for the modal_no:", order.model_no);
-                }
-
-
-            } else {
-                console.warn("not products found on cron_orders for the modal_no:", order.model_no);
-            }
-
-
-            try {
-                const nameArray = order.recipient_name.split(" ")
-
-                const orderCreateReqBody = {
-                    "order": {
-                        "line_items": [
-                            {
-                                "variant_id": varantIdForOrder,
-                                "quantity": 1, // need to confirm first
-                                "price": order.price,
-                                "properties": {
-                                    "_kickscrew_order-id": order.order_id,
-                                    "_kickscrew_order-size": order.size,
-                                    "_kickscrew_order-on_hold": order.on_hold,
-                                    "_kickscrew_order-brand": order.brand,
-                                    "_kickscrew_order-currency": order.currency,
-                                    "_kickscrew_order-status": order.status,
-                                    "_kickscrew_order-cancel_reason": order.cancel_reason,
-                                    "_kickscrew_order-service_fee": order.service_fee,
-                                    "_kickscrew_order-operation_fee": order.operation_fee,
-                                    "_kickscrew_order-income": order.income,
-                                    "_kickscrew_order-customer_order_reference": order.customer_order_reference,
-                                    "_kickscrew_order-created_at": order.created_at,
-                                    "_kickscrew_order-ext_ref": order.ext_ref,
-                                    "_kickscrew_order-payout": order.payout,
-                                },
-                                ...(order.status === "order.completed" ? { "fulfillment_status": "fulfilled" } : {})
-                            }
-                        ],
-                        "customer": {
-                            "first_name": nameArray.slice(0, -1).join(" "),
-                            "last_name": nameArray[nameArray.length - 1],
-                        },
-                        // "phone": order.mobile,
-                        "shipping_address": {
-                            "first_name": nameArray.slice(0, -1).join(" "),
-                            "last_name": nameArray[nameArray.length - 1],
-                            "address1": order.address_line1,
-                            "address2": order.address_line2,
-                            "phone": order.mobile,
-                            "city": order.city,
-                            "province": order.state_province,
-                            "country": order.country,
-                            "zip": order.zip
-                        }
-
                     }
                 }
-                const endPoint = "/admin/api/2024-07/orders.json"
-                const orderCreateResData = await restApiRequest(shopData, orderCreateReqBody, endPoint)
-                // console.log("orderCreateResData", orderCreateResData);
-            } catch (error) {
-                console.error(`Error creating order ${order.order_id}:`, error);
-
             }
-        }));
+        }`;
 
-        return json({ message: "successfully order created!" })
+    const data = await graphqlRequest(shopData, productTagQuery);
+    const productEdges = data.data.products.edges;
 
-    } catch (error) {
-        return json({ error: "error on while order create!" })
-
+    if (productEdges.length) {
+        const variants = productEdges[0].node.variants.edges;
+        const filteredVariants = variants.filter(variant =>
+            variant.node.selectedOptions[0].value === order.size.displayValue.split(" ")[1]
+        );
+        return filteredVariants.length ? Number(filteredVariants[0].node.id.slice(29)) : null;
     }
-}
+    console.warn("No products found for model_no:", order.model_no);
+    return null;
+};
+
+const findExistingOrder = async (shopData, orderId) => {
+    const orderIDQuery = `
+        query {
+            orders(first: 10, query: "name:K_ID-${orderId}") {
+                edges {
+                    node {
+                        id
+                        displayFulfillmentStatus
+                        cancelledAt
+                    }
+                }
+            }
+        }`;
+
+    const data = await graphqlRequest(shopData, orderIDQuery);
+    return data?.data?.orders?.edges?.[0]?.node || null;
+};
+
+const updateExistingOrder = async (shopData, existingOrder, order) => {
+    const createdOrderID = existingOrder.id.slice(20);
+    if (order.status === "order.completed" && existingOrder.displayFulfillmentStatus !== "FULFILLED") {
+        console.log("update to completed");
+        await fulfillOrder(shopData, createdOrderID);
+    } else if (order.status === "order.canceled" && existingOrder.cancelledAt === null) {
+        console.log("update to canceled");
+        await cancelOrder(shopData, createdOrderID);
+    } else {
+        console.log("No update needed for existing order:", existingOrder);
+    }
+};
+
+const fulfillOrder = async (shopData, orderID) => {
+    const orderFulfillmentQuery = `
+        mutation fulfillmentCreate($fulfillment: FulfillmentInput!) {
+            fulfillmentCreate(fulfillment: $fulfillment) {
+                fulfillment {
+                    id
+                }
+                userErrors {
+                    field
+                    message
+                }
+            }
+        }`;
+
+    const orderEndpoint = `/admin/api/2023-04/orders/${orderID}/fulfillment_orders.json`;
+    const orderResponse = await restApiRequest(shopData, {}, orderEndpoint, "GET");
+    const orderFulfillmentId = orderResponse.fulfillment_orders[0].line_items[0].fulfillment_order_id;
+
+    await graphqlRequest(shopData, orderFulfillmentQuery, {
+        variables: {
+            fulfillment: {
+                lineItemsByFulfillmentOrder: [{
+                    fulfillmentOrderId: `gid://shopify/FulfillmentOrder/${orderFulfillmentId}`
+                }]
+            }
+        }
+    });
+};
+
+const cancelOrder = async (shopData, orderID) => {
+    const orderCancEndpoint = `/admin/api/2024-07/orders/${orderID}/cancel.json`;
+    await restApiRequest(shopData, {}, orderCancEndpoint);
+};
+
+const createNewOrder = async (shopData, order, variantId) => {
+    const nameArray = order.recipient_name.split(" ");
+    const orderCreateReqBody = {
+        order: {
+            name: `K_ID-${order.order_id}`,
+            line_items: [{
+                variant_id: variantId,
+                quantity: 1,
+                price: order.price,
+                properties: {
+                    "_kickscrew_order-id": order.order_id,
+                    "_kickscrew_order-size": order.size,
+                    "_kickscrew_order-on_hold": order.on_hold,
+                    "_kickscrew_order-brand": order.brand,
+                    "_kickscrew_order-currency": order.currency,
+                    "_kickscrew_order-status": order.status,
+                    "_kickscrew_order-cancel_reason": order.cancel_reason,
+                    "_kickscrew_order-service_fee": order.service_fee,
+                    "_kickscrew_order-operation_fee": order.operation_fee,
+                    "_kickscrew_order-income": order.income,
+                    "_kickscrew_order-customer_order_reference": order.customer_order_reference,
+                    "_kickscrew_order-created_at": order.created_at,
+                    "_kickscrew_order-ext_ref": order.ext_ref,
+                    "_kickscrew_order-payout": order.payout,
+                },
+                ...(order.status === "order.completed" ? { fulfillment_status: "fulfilled" } : {})
+            }],
+            customer: {
+                first_name: nameArray.slice(0, -1).join(" "),
+                last_name: nameArray[nameArray.length - 1],
+            },
+            shipping_address: {
+                first_name: nameArray.slice(0, -1).join(" "),
+                last_name: nameArray[nameArray.length - 1],
+                address1: order.address_line1,
+                address2: order.address_line2,
+                phone: order.mobile,
+                city: order.city,
+                province: order.state_province,
+                country: order.country,
+                zip: order.zip,
+            }
+        }
+    };
+
+    const orderCreateEndpoint = "/admin/api/2024-07/orders.json";
+    const orderCreateResData = await restApiRequest(shopData, orderCreateReqBody, orderCreateEndpoint)
+    // console.log("orderCreateResData", orderCreateResData);
+    if (orderCreateResData?.order?.id) {
+
+        const createdOrderID = orderCreateResData.order.id
+        // console.log("createdOrderID", createdOrderID);
+        await delay(4000)
+        // for now uncomment
+        if (order.status === "order.completed") {
+            console.log('on completed');
+        } else if (order.status === "order.canceled") {
+            console.log('on cancel');
+            const orderCancEndPoint = `/admin/api/2024-07/orders/${createdOrderID}/cancel.json`
+            const orderCancReqBody = {}
+            const orderCancResData = await restApiRequest(shopData, orderCancReqBody, orderCancEndPoint)
+            // console.log("orderCancResData", orderCancResData);
+        } else {
+            console.log('no operation needed status:', order.status);
+        }
+    }
+    console.log(`New order created for order ID: ${order.order_id}`);
+};

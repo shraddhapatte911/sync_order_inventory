@@ -6,7 +6,7 @@ const fetchCreatedOrders = async (page_no, api_key) => {
     try {
         const urlWithDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&date_from=${"2024-08-02T02:33:14.000Z"}&date_to=${"2024-08-02T02:33:14.000Z"}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
         const urlWithoutDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
-        const responseOfOrders = await fetch(urlWithDateRange, {
+        const responseOfOrders = await fetch(urlWithoutDateRange, {
             method: "GET",
             headers: {
                 "accept": "application/json",

@@ -1,4 +1,4 @@
-const fetchListedProducts = async (page_no, page_size, api_key) => {
+const fetchListedProducts = async (page_no, page_size, api_key, min_qty) => {
     let totalProducts;
     let gotProducts = [];
     // console.log("page_no, page_size, api_key", page_no, "    ", page_size, "     ", api_key);
@@ -14,7 +14,7 @@ const fetchListedProducts = async (page_no, page_size, api_key) => {
             body: JSON.stringify({
                 page_no,
                 page_size,
-                min_qty: 1
+                ...(min_qty ? { min_qty } : {})
             })
         });
 

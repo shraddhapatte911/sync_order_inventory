@@ -26,7 +26,7 @@ export const action = async ({ request }) => {
     case "SHOP_REDACT":
     case "PRODUCTS_UPDATE":
       // console.log("payload of PRODUCTS_UPDATE ", payload);
-      return "test"
+      // return "test"
 
       // await Promise.all(payload?.variants.map(async (variant) => {
       try {
@@ -47,7 +47,7 @@ export const action = async ({ request }) => {
 
           const updatedProductDataRes = await updateKickscrewProducts(payload?.variants, productTag, api_key)
 
-          console.log(" updatedProductDataRes.........    ", updatedProductDataRes);
+          // console.log(" updatedProductDataRes.........    ", updatedProductDataRes);
 
         } else {
           console.log("productTag not found in the payload matching 'kickscrew-', payload?.tags: ", payload?.tags);

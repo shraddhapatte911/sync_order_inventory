@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://representations-laboratories-poly-loss.trycloudflare.com"
+application_url = "https://mill-idea-change-solved.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_inventory,read_locations,read_orders,read_products,write_assigned
 
 [auth]
 redirect_urls = [
-  "https://representations-laboratories-poly-loss.trycloudflare.com/auth/callback",
-  "https://representations-laboratories-poly-loss.trycloudflare.com/auth/shopify/callback",
-  "https://representations-laboratories-poly-loss.trycloudflare.com/api/auth/callback"
+  "https://mill-idea-change-solved.trycloudflare.com/auth/callback",
+  "https://mill-idea-change-solved.trycloudflare.com/auth/shopify/callback",
+  "https://mill-idea-change-solved.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://representations-laboratories-poly-loss.trycloudflare.com"
+url = "https://mill-idea-change-solved.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 
