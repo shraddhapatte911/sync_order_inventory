@@ -1,39 +1,18 @@
 import { json } from "@remix-run/node";
-import { authenticate } from "../shopify.server";
 import fetchListedProducts from "../apis/fetchListedProducts";
-
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 3000;
-
-const graphqlRequest = async (admin, query, variables = {}) => {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            const response = await admin.graphql(query, { variables });
-            const data = await response.json();
-
-            if (!response.ok) {
-                const errorMessages = data.errors?.map(e => e.message).join(', ') || 'Unknown error';
-                throw new Error(`GraphQL error: ${errorMessages}`);
-            }
-
-            return data;
-        } catch (error) {
-            if (attempt === MAX_RETRIES) {
-                console.error(`Failed after ${MAX_RETRIES} attempts:`, error);
-                throw error;
-            }
-            console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-        }
-    }
-};
+import { graphqlRequest } from "../components/graphqlRequest";
+import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
-    console.log("sync process has been started of shopify products!");
-    // console.log("sync process has been started!");
     try {
-        const { session, admin } = await authenticate.admin(request);
+        const shopData = await prisma.session.findMany()
+
+        if (!shopData.length) return
+
+        console.log('Task executed at:', new Date(), shopData);
+        console.log("sync process has been started of products through api!");
         const api_key = process.env.crewsupply_api_key;
+        // console.log("api_key", api_key);
 
         let totalProductsToUpdate = [];
         let kickscrewCurrentPage = 0;
@@ -48,16 +27,14 @@ export const loader = async ({ request }) => {
             kickscrewCurrentPage++;
         }
 
-        // console.log("First Product:", totalProductsToUpdate[0]);
-        // console.log("Total Products Updated:", totalProductsToUpdate.length);
+        console.log("First Product:", totalProductsToUpdate[0]);
+        // console.log("Total Products To Update:", totalProductsToUpdate.length);
 
         await Promise.all(totalProductsToUpdate.map(async (product) => {
+            // console.log("product.model_number", product.model_number);
+
             try {
-
-                console.log("product.model_number}", product.model_number);
-
                 const productTagQuery = `
-                    #graphql
                     query {
                         products(first: 10, query: "tag:${product.model_number}") {
                             edges {
@@ -71,12 +48,11 @@ export const loader = async ({ request }) => {
                         }
                     }
                 `;
-                const dataOfProductTag = await graphqlRequest(admin, productTagQuery);
+                const dataOfProductTag = await graphqlRequest(shopData, productTagQuery);
                 const tagValue = dataOfProductTag.data?.products?.edges?.[0]?.node?.id;
 
                 if (tagValue) {
                     const productVariantsQuery = `
-                        #graphql
                         query {
                             product(id: "${tagValue}") {
                                 title
@@ -108,16 +84,11 @@ export const loader = async ({ request }) => {
                             }
                         }
                     `;
-                    const dataOfProductVariants = await graphqlRequest(admin, productVariantsQuery);
-                    // console.log("sssssss dataOfProductVari");
 
-                    // console.log("tagValue...............", tagValue);
-
-
-                    // console.log("dataOfProductVariants?.data?.product?.variants?.edges",dataOfProductVariants?.data?.product?.variants?.edges?.[0].node.selectedOptions);
+                    const dataOfProductVariants = await graphqlRequest(shopData, productVariantsQuery);
 
                     const variantToUpdate = dataOfProductVariants?.data?.product?.variants?.edges.find(edge =>
-                        edge.node.selectedOptions?.[0]?.value === product.model_size
+                        edge.node.selectedOptions?.[0].value === product.model_size
                     );
 
                     if (variantToUpdate) {
@@ -125,12 +96,19 @@ export const loader = async ({ request }) => {
                         const locationID = variantToUpdate.node.inventoryItem.inventoryLevels.edges[0]?.node?.location?.id;
                         const delta = product.quantity - variantToUpdate.node.inventoryQuantity;
 
-                        // console.log("Quantity delta......", delta);
+                        // if (product.model_number === "5650-1SS240106CWHS-BLAC") {
+                        //     console.log("5650-1SS240106CWHS-BLAC product.model_size", product.model_size);
+                        //     console.log("5650-1SS240106CWHS-BLAC delta", delta);
+                        //     console.log("5650-1SS240106CWHS-BLAC product.quantity", product.quantity);
+                        //     console.log("5650-1SS240106CWHS-BLAC variantToUpdate.node.inventoryQuantity", variantToUpdate.node.inventoryQuantity);
 
+                        // }
+
+                        // console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
 
                         if (locationID) {
+                            
                             const inventoryAdjustmentMutation = `
-                                #graphql
                                 mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
                                     inventoryAdjustQuantities(input: $input) {
                                         userErrors {
@@ -148,17 +126,20 @@ export const loader = async ({ request }) => {
                                     }
                                 }
                             `;
-                            await graphqlRequest(admin, inventoryAdjustmentMutation, {
-                                input: {
-                                    reason: "correction",
-                                    name: "available",
-                                    changes: [
-                                        {
-                                            delta,
-                                            inventoryItemId: inventoryItemID,
-                                            locationId: locationID
-                                        }
-                                    ]
+
+                            await graphqlRequest(shopData, inventoryAdjustmentMutation, {
+                                variables: {
+                                    input: {
+                                        reason: "correction",
+                                        name: "available",
+                                        changes: [
+                                            {
+                                                delta,
+                                                inventoryItemId: inventoryItemID,
+                                                locationId: locationID
+                                            }
+                                        ]
+                                    }
                                 }
                             });
                         }
@@ -169,11 +150,12 @@ export const loader = async ({ request }) => {
             }
         }));
 
-        console.log("Sync completed successfully. All products have been processed.");
-        return json({ message: 'Got Data Successfully!' });
+        console.log("Sync completed successfully. All products have been processed of cron.");
+        return json({message: "successfully synced products"})
 
     } catch (error) {
-        console.error("Error while updating shopify products:", error);
-        return json({ message: 'Error while updating shopify products' });
+        console.error("Error while syncing products:", error);
+        return json({message: "Error while syncing products"})
+
     }
 };

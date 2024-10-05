@@ -17,7 +17,7 @@ export async function cron_orders_shopify_create() {
             const apiKey = process.env.crewsupply_api_key;
             if (!apiKey) return console.log("API key is empty on order cron.");
 
-            console.log("Sync order has started through cron!");
+            console.log("Sync order has started of orders through cron!");
 
             let totalOrdersToCreate = [];
             let currentPage = 0;
@@ -111,14 +111,16 @@ const getVariantId = async (shopData, order) => {
         }`;
 
     const data = await graphqlRequest(shopData, productTagQuery);
-    const productEdges = data.data.products.edges;
+    if (data?.data?.products?.edges) {
+        const productEdges = data.data.products.edges;
 
-    if (productEdges.length) {
-        const variants = productEdges[0].node.variants.edges;
-        const filteredVariants = variants.filter(variant =>
-            variant.node.selectedOptions[0].value === order.size.displayValue.split(" ")[1]
-        );
-        return filteredVariants.length ? Number(filteredVariants[0].node.id.slice(29)) : null;
+        if (productEdges.length) {
+            const variants = productEdges[0].node.variants.edges;
+            const filteredVariants = variants.filter(variant =>
+                variant.node.selectedOptions[0].value === order.size.displayValue.split(" ")[1]
+            );
+            return filteredVariants.length ? Number(filteredVariants[0].node.id.slice(29)) : null;
+        }
     }
     console.warn("No products found for model_no:", order.model_no);
     return null;
@@ -171,17 +173,19 @@ const fulfillOrder = async (shopData, orderID) => {
 
     const orderEndpoint = `/admin/api/2023-04/orders/${orderID}/fulfillment_orders.json`;
     const orderResponse = await restApiRequest(shopData, {}, orderEndpoint, "GET");
-    const orderFulfillmentId = orderResponse.fulfillment_orders[0].line_items[0].fulfillment_order_id;
+    if (orderResponse.fulfillment_orders?.[0]?.line_items?.[0]?.fulfillment_order_id) {
+        const orderFulfillmentId = orderResponse.fulfillment_orders[0].line_items[0].fulfillment_order_id;
 
-    await graphqlRequest(shopData, orderFulfillmentQuery, {
-        variables: {
-            fulfillment: {
-                lineItemsByFulfillmentOrder: [{
-                    fulfillmentOrderId: `gid://shopify/FulfillmentOrder/${orderFulfillmentId}`
-                }]
+        await graphqlRequest(shopData, orderFulfillmentQuery, {
+            variables: {
+                fulfillment: {
+                    lineItemsByFulfillmentOrder: [{
+                        fulfillmentOrderId: `gid://shopify/FulfillmentOrder/${orderFulfillmentId}`
+                    }]
+                }
             }
-        }
-    });
+        });
+    }
 };
 
 const cancelOrder = async (shopData, orderID) => {

@@ -15,7 +15,7 @@ export async function cron_product_CAD_update() {
             if (!shopData.length) return
 
             console.log('Task executed at:', new Date(), shopData);
-            console.log("sync process has been started of cron!");
+            console.log("sync process has been started of products through cron!");
             const api_key = process.env.crewsupply_api_key;
             // console.log("api_key", api_key);
 
@@ -37,7 +37,7 @@ export async function cron_product_CAD_update() {
             // console.log("Total Products To Update:", totalProductsToUpdate.length);
 
             await Promise.all(totalProductsToUpdate.map(async (product) => {
-                console.log("product.model_number", product.model_number);
+                // console.log("product.model_number", product.model_number);
 
                 try {
                     const productTagQuery = `
@@ -102,13 +102,13 @@ export async function cron_product_CAD_update() {
                             const locationID = variantToUpdate.node.inventoryItem.inventoryLevels.edges[0]?.node?.location?.id;
                             const delta = product.quantity - variantToUpdate.node.inventoryQuantity;
 
-                            if (product.model_number === "5650-1SS240106CWHS-BLAC") {
-                                console.log("5650-1SS240106CWHS-BLAC product.model_size", product.model_size);
-                                console.log("5650-1SS240106CWHS-BLAC delta", delta);
-                                console.log("5650-1SS240106CWHS-BLAC product.quantity", product.quantity);
-                                console.log("5650-1SS240106CWHS-BLAC variantToUpdate.node.inventoryQuantity", variantToUpdate.node.inventoryQuantity);
+                            // if (product.model_number === "5650-1SS240106CWHS-BLAC") {
+                            //     console.log("5650-1SS240106CWHS-BLAC product.model_size", product.model_size);
+                            //     console.log("5650-1SS240106CWHS-BLAC delta", delta);
+                            //     console.log("5650-1SS240106CWHS-BLAC product.quantity", product.quantity);
+                            //     console.log("5650-1SS240106CWHS-BLAC variantToUpdate.node.inventoryQuantity", variantToUpdate.node.inventoryQuantity);
 
-                            }
+                            // }
 
                             // console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
 
@@ -164,16 +164,16 @@ export async function cron_product_CAD_update() {
     };
 
     // try {
-    //     task()
+    //     await task()
     // } catch (error) {
     //     console.log("error on task.........", error);
     // }
 
-    // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
+    const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
     // const scheduledTime = '0 * * * *';  // cron job to run every hour
 
-    const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
+    // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 
     // // const scheduledTime = '*/15 * * * * *' // to run every 10 seconds
 

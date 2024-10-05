@@ -1,5 +1,5 @@
 const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 10000;
+const RETRY_DELAY_MS = 60 * 1000;
 
 export const graphqlRequest = async (shopData, query, variables, api_version = "2024-07") => {
     // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", shopData, "     ", query, "       ", variables);
@@ -30,24 +30,19 @@ export const graphqlRequest = async (shopData, query, variables, api_version = "
                 }
                 console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, data.errors);
                 await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+                continue; 
+
             }
 
             if (!response.ok) {
                 console.error("Response isn't ok of graphql api:", data);
-
-                if (data.errors && data.errors.includes('API rate limit')) {
-                    const retryAfter = 60 * 1000; // 60 seconds
-                    console.warn(`Rate limit exceeded. Retrying request after ${retryAfter / 1000} seconds.`);
-                    await new Promise(resolve => setTimeout(resolve, retryAfter));
-                    continue; 
-                }
 
                 if (attempt === MAX_RETRIES) {
                     throw new Error(`Failed response isn't ok after ${MAX_RETRIES} attempts: ${JSON.stringify(data.errors)}`);
                 }
 
                 console.warn(`Retrying request due to error (${attempt}/${MAX_RETRIES}):`, data.errors);
-                await new Promise(resolve => setTimeout(resolve, DELAY_DUR)); 
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); 
                 continue; 
             }
             return data;
@@ -58,6 +53,8 @@ export const graphqlRequest = async (shopData, query, variables, api_version = "
             }
             console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
             await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            continue; 
+
         }
     }
 };
