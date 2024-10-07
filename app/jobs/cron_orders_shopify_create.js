@@ -32,7 +32,7 @@ export async function cron_orders_shopify_create() {
 
             await Promise.all(totalOrdersToCreate.map(processOrder(shopData)));
 
-            console.log("Sync completed successfully. All orders have been created on Shopify store.");
+            console.log("Sync completed successfully. All orders have been created on Shopify store of cron.");
             return console.log("Successfully created orders!");
 
         }
@@ -50,9 +50,9 @@ export async function cron_orders_shopify_create() {
 
     // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
-    // const scheduledTime = '0 * * * *';  // cron job to run every hour
+    const scheduledTime = '0 * * * *';  // cron job to run every hour
 
-    const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
+    // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 
     // // const scheduledTime = '*/15 * * * * *' // to run every 10 seconds
 
@@ -72,11 +72,12 @@ export async function cron_orders_shopify_create() {
 const processOrder = (shopData) => async (order) => {
     try {
         const variantId = await getVariantId(shopData, order);
-        variantId ?
-            console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
+        // variantId ? console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
         if (!variantId) return console.warn(`Variant not found for model_no: ${order.model_no}`);
 
         const existingOrder = await findExistingOrder(shopData, order.order_id);
+        // console.log("existingOrder.............................>",existingOrder);
+        
         if (existingOrder) {
             await updateExistingOrder(shopData, existingOrder, order);
         } else {

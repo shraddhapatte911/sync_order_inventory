@@ -5,6 +5,9 @@ import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
     try {
+        // for testing quantity of products
+        // 5650-1SS240106CWHS-BLAC
+        // DH4692-003
         const shopData = await prisma.session.findMany()
 
         if (!shopData.length) return
@@ -107,7 +110,7 @@ export const loader = async ({ request }) => {
                         // console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
 
                         if (locationID) {
-                            
+
                             const inventoryAdjustmentMutation = `
                                 mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
                                     inventoryAdjustQuantities(input: $input) {
@@ -150,12 +153,12 @@ export const loader = async ({ request }) => {
             }
         }));
 
-        console.log("Sync completed successfully. All products have been processed of cron.");
-        return json({message: "successfully synced products"})
+        console.log("Sync completed successfully. All products have been processed of API.");
+        return json({ message: "successfully synced products" })
 
     } catch (error) {
         console.error("Error while syncing products:", error);
-        return json({message: "Error while syncing products"})
+        return json({ message: "Error while syncing products" })
 
     }
 };

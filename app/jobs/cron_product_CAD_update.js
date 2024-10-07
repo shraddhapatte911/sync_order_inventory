@@ -6,8 +6,9 @@ import { graphqlRequest } from '../components/graphqlRequest';
 // const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function cron_product_CAD_update() {
-
-
+    // for testing quantity of products
+    // 5650-1SS240106CWHS-BLAC
+    // DH4692-003
     const task = async () => {
         try {
             const shopData = await prisma.session.findMany()
@@ -169,9 +170,9 @@ export async function cron_product_CAD_update() {
     //     console.log("error on task.........", error);
     // }
 
-    const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
+    // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
-    // const scheduledTime = '0 * * * *';  // cron job to run every hour
+    const scheduledTime = '0 * * * *';  // cron job to run every hour
 
     // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 

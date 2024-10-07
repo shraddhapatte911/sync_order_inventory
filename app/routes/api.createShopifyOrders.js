@@ -31,7 +31,7 @@ export const loader = async ({ request }) => {
 
         await Promise.all(totalOrdersToCreate.map(processOrder(shopData)));
 
-        console.log("Sync completed successfully. All orders have been created on Shopify store.");
+        console.log("Sync completed successfully. All orders have been created on Shopify store of API.");
         return json({ message: "Successfully created orders!" });
 
     }
@@ -44,11 +44,12 @@ export const loader = async ({ request }) => {
 const processOrder = (shopData) => async (order) => {
     try {
         const variantId = await getVariantId(shopData, order);
-        variantId ?
-            console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
+        // variantId ? console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
         if (!variantId) return console.warn(`Variant not found for model_no: ${order.model_no}`);
 
         const existingOrder = await findExistingOrder(shopData, order.order_id);
+        // console.log("existingOrder.............................>", existingOrder);
+
         if (existingOrder) {
             await updateExistingOrder(shopData, existingOrder, order);
         } else {
