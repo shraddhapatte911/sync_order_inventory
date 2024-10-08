@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://installations-fear-cumulative-able.trycloudflare.com"
+application_url = "https://rendered-mpeg-numbers-oxygen.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_inventory,read_locations,read_orders,read_products,write_assigned
 
 [auth]
 redirect_urls = [
-  "https://installations-fear-cumulative-able.trycloudflare.com/auth/callback",
-  "https://installations-fear-cumulative-able.trycloudflare.com/auth/shopify/callback",
-  "https://installations-fear-cumulative-able.trycloudflare.com/api/auth/callback"
+  "https://rendered-mpeg-numbers-oxygen.trycloudflare.com/auth/callback",
+  "https://rendered-mpeg-numbers-oxygen.trycloudflare.com/auth/shopify/callback",
+  "https://rendered-mpeg-numbers-oxygen.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://installations-fear-cumulative-able.trycloudflare.com"
+url = "https://rendered-mpeg-numbers-oxygen.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 

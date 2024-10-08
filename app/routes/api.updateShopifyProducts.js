@@ -9,8 +9,18 @@ export const loader = async ({ request }) => {
         // 5650-1SS240106CWHS-BLAC
         // DH4692-003
         const shopData = await prisma.session.findMany()
-
         if (!shopData.length) return
+
+        const updateStartStatus = await prisma.SyncStatus.update({
+            where: {
+                id: 3,
+            },
+            data: {
+                isProductProcessing: true,
+
+            },
+        })
+        console.log("updateStartStatus", updateStartStatus);
 
         console.log('Task executed at:', new Date(), shopData);
         console.log("sync process has been started of products through api!");
@@ -32,6 +42,7 @@ export const loader = async ({ request }) => {
 
         console.log("First Product:", totalProductsToUpdate[0]);
         // console.log("Total Products To Update:", totalProductsToUpdate.length);
+        // await new Promise(resolve => setTimeout(resolve, 30000));
 
         await Promise.all(totalProductsToUpdate.map(async (product) => {
             // console.log("product.model_number", product.model_number);
@@ -154,6 +165,18 @@ export const loader = async ({ request }) => {
         }));
 
         console.log("Sync completed successfully. All products have been processed of API.");
+
+        const updateEndStatus = await prisma.SyncStatus.update({
+            where: {
+                id: 3,
+            },
+            data: {
+                isProductProcessing: false,
+
+            },
+        })
+        console.log("updateEndStatus", updateEndStatus)
+
         return json({ message: "successfully synced products" })
 
     } catch (error) {

@@ -8,10 +8,6 @@ import updateShopifyProducts from '../../apis/updateShopifyProducts';
 import createShopifyOrder from '../../apis/createShopifyOrder';
 
 export default function ProductsAndOrdersSync() {
-    const [resourcetype, setResourceType] = useState('product');
-    const [selectedProducts, setSelectedProducts] = useState([])
-    const [importItems, setImportItems] = useState([])
-    const [timeoutVar, setTimeoutVar] = useState(0)
     const [products, setProducts] = useState([])
     const [hasNextPage, setHasNextPage] = useState(false);
     const [hasPrevPage, setHasPrevPage] = useState(false);
@@ -24,33 +20,32 @@ export default function ProductsAndOrdersSync() {
         actionIDS: []
     })
     const [totalItems, setTotalItems] = useState(0)
-
-    // useEffect(() => {
-    //     // console.log('useEffect timeoutVar', timeoutVar)
-    //     // getImportStatuses()
-    //     fetchListedProducts()
-    // }, [timeoutVar])
+    const [isLoading, setLoading] = useState({
+        orderSync: false,
+        productSync: false
+    })
 
     useEffect(() => {
         fetchListedProducts()
+        fetchSyncStatus()
     }, [currentPage])
 
-    const getImportStatuses = async () => {
-        const jobsData = await fetch('/api/jobs').then((response) => response.json())
-        // console.log('getImportStatuses jobsData', jobsData)
-
-        if (!!jobsData.success && !!jobsData?.data?.length) {
-            // console.log("ssssssssssssssssss");
-
-            setImportItems(jobsData.data)
+    const fetchSyncStatus = async () => {
+        try {
+            const response = await fetch("/api/getSyncStatus")
+            if (response.ok) {
+                const data = await response.json()
+                if (data?.syncStatus) {
+                    setLoading({
+                        orderSync: data?.syncStatus[0].isOrderProcessing,
+                        productSync: data?.syncStatus[0].isProductProcessing
+                    })
+                }
+                console.log("data of getSyncStatus", data);
+            }
+        } catch (error) {
+            console.log("error while fetching syncstatus", error);
         }
-
-        setTimeout(() => {
-            // console.log('getImportStatuses setTimeout timeoutVar', timeoutVar)
-            setTimeoutVar((oldTimeoutVar) => {
-                return 1 + oldTimeoutVar
-            })
-        }, 10000)
     }
 
     const fetchListedProducts = async () => {
@@ -176,16 +171,68 @@ export default function ProductsAndOrdersSync() {
     //     return currentPage * itemsPerPage + index + 1;
     // };
 
+    const pollSyncStatus = async (type) => {
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        let isComplete = false;
+
+        while (!isComplete) {
+            try {
+                console.log("poling.........");
+                const responseSyncStatus = await fetch("/api/getSyncStatus");
+
+                if (!responseSyncStatus.ok) {
+                    throw new Error("Failed to fetch Sync Status");
+                }
+
+                const dataSyncStatus = await responseSyncStatus.json();
+
+                if (dataSyncStatus?.syncStatus?.length > 0) {
+                    const { isOrderProcessing, isProductProcessing } = dataSyncStatus.syncStatus[0];
+
+                    console.log(" isOrderProcessing, isProductProcessing", isOrderProcessing, isProductProcessing);
+
+
+                    if (type === "product" ? !isProductProcessing : !isOrderProcessing) {
+                        console.log("Process finished!", dataSyncStatus);
+                        isComplete = true;
+                        setLoading((prev) => ({
+                            orderSync: type !== "product" ? false : prev.orderSync,
+                            productSync: type === "product" ? false : prev.productSync
+                        }));
+                        await fetchListedProducts();
+                    }
+                }
+
+            } catch (pollingError) {
+                console.error("Polling error:", pollingError);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+    }
+
     const handleSync = useCallback(async (type) => {
         try {
+            setLoading((prev) => ({
+                orderSync: type !== "product" ? true : prev.orderSync,
+                productSync: type === "product" ? true : prev.productSync
+            }))
+
+            pollSyncStatus(type)
             const data = type === "product" ? await updateShopifyProducts() : await createShopifyOrder();
 
-            if (data?.status === "finished") {
-                await fetchListedProducts();
-            } else {
-                const actionMessage = type === "product" ? "Products update failed:" : "Orders creation failed";
-                console.log(actionMessage, data?.message);
-            }
+            // if (data?.status === "finished") {
+            //     console.log("process finished!");
+
+            //     setLoading((prev) => ({
+            //         orderSync: type !== "product" ? false : prev.orderSync,
+            //         productSync: type === "product" ? false : prev.productSync
+            //     }))
+            //     await fetchListedProducts();
+            // } else {
+            //     const actionMessage = type === "product" ? "Products update failed:" : "Orders creation failed";
+            //     console.log(actionMessage, data?.message);
+            // }
         } catch (error) {
             console.log("Error in handleSync for", type === "product" ? "products:" : "orders:", error);
         }
@@ -266,7 +313,7 @@ export default function ProductsAndOrdersSync() {
 
                                             <Placeholder
                                                 component={
-                                                    <Button variant="primary" onClick={() => handleSync('product')}>
+                                                    <Button variant="primary" loading={isLoading.productSync} onClick={() => handleSync('product')}>
                                                         Sync Products
                                                     </Button>
                                                 }
@@ -277,7 +324,7 @@ export default function ProductsAndOrdersSync() {
 
                                             <Divider borderColor="transparent" />
 
-                                            <Button variant="primary" onClick={() => handleSync('order')}>
+                                            <Button variant="primary" loading={isLoading.orderSync} onClick={() => handleSync('order')}>
                                                 Sync Orders
                                             </Button>
                                         </Card>

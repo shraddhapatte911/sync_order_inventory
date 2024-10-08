@@ -18,6 +18,18 @@ export const loader = async ({ request }) => {
 
         console.log("Sync order has started of orders through api!");
 
+
+        const updateStartStatus = await prisma.SyncStatus.update({
+            where: {
+                id: 3,
+            },
+            data: {
+                isOrderProcessing: true,
+
+            },
+        })
+        console.log("updateStartStatus", updateStartStatus);
+
         let totalOrdersToCreate = [];
         let currentPage = 0;
         let hasNextPage = true;
@@ -32,6 +44,19 @@ export const loader = async ({ request }) => {
         await Promise.all(totalOrdersToCreate.map(processOrder(shopData)));
 
         console.log("Sync completed successfully. All orders have been created on Shopify store of API.");
+
+
+        const updateEndStatus = await prisma.SyncStatus.update({
+            where: {
+                id: 3,
+            },
+            data: {
+                isOrderProcessing: false,
+
+            },
+        })
+        console.log("updateEndStatus", updateEndStatus)
+
         return json({ message: "Successfully created orders!" });
 
     }

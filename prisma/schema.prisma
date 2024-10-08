@@ -24,3 +24,9 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model SyncStatus {
+  id    Int    @id @default(autoincrement())
+  isOrderProcessing      Boolean   @default(false)
+  isProductProcessing    Boolean   @default(false)
+}
