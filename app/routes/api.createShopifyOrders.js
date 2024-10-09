@@ -157,6 +157,7 @@ const updateExistingOrder = async (shopData, existingOrder, order) => {
 };
 
 const fulfillOrder = async (shopData, orderID) => {
+    // console.log("fullfillment create >>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     const orderFulfillmentQuery = `
         mutation fulfillmentCreate($fulfillment: FulfillmentInput!) {
             fulfillmentCreate(fulfillment: $fulfillment) {
@@ -183,7 +184,7 @@ const fulfillOrder = async (shopData, orderID) => {
                     }]
                 }
             }
-        });
+        },"2024-10");
     }
 };
 

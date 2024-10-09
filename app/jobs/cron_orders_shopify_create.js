@@ -159,6 +159,7 @@ const updateExistingOrder = async (shopData, existingOrder, order) => {
 };
 
 const fulfillOrder = async (shopData, orderID) => {
+    // console.log("fullfillment create >>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     const orderFulfillmentQuery = `
         mutation fulfillmentCreate($fulfillment: FulfillmentInput!) {
             fulfillmentCreate(fulfillment: $fulfillment) {
@@ -174,7 +175,7 @@ const fulfillOrder = async (shopData, orderID) => {
 
     const orderEndpoint = `/admin/api/2023-04/orders/${orderID}/fulfillment_orders.json`;
     const orderResponse = await restApiRequest(shopData, {}, orderEndpoint, "GET");
-    if (orderResponse.fulfillment_orders?.[0]?.line_items?.[0]?.fulfillment_order_id) {
+    if (orderResponse?.fulfillment_orders?.[0]?.line_items?.[0]?.fulfillment_order_id) {
         const orderFulfillmentId = orderResponse.fulfillment_orders[0].line_items[0].fulfillment_order_id;
 
         await graphqlRequest(shopData, orderFulfillmentQuery, {
@@ -185,7 +186,7 @@ const fulfillOrder = async (shopData, orderID) => {
                     }]
                 }
             }
-        });
+        },"2024-10");
     }
 };
 

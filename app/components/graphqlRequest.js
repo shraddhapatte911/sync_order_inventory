@@ -2,7 +2,7 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 60 * 1000;
 
 export const graphqlRequest = async (shopData, query, variables, api_version = "2024-07") => {
-    // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", shopData, "     ", query, "       ", variables);
+    // console.log("dsfsdfdfsddffd------------------sdfdfsdfsd", shopData, "     ", query, "       ", api_version);
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         // console.log("shopData[0]?.shop----------------->", shopData[0]?.shop);
         // console.log("shopData[0]?.accessToken------------>", shopData[0]?.accessToken);
@@ -30,7 +30,7 @@ export const graphqlRequest = async (shopData, query, variables, api_version = "
                 }
                 console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, data.errors);
                 await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-                continue; 
+                continue;
 
             }
 
@@ -42,8 +42,8 @@ export const graphqlRequest = async (shopData, query, variables, api_version = "
                 }
 
                 console.warn(`Retrying request due to error (${attempt}/${MAX_RETRIES}):`, data.errors);
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS)); 
-                continue; 
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+                continue;
             }
             return data;
         } catch (error) {
@@ -53,7 +53,7 @@ export const graphqlRequest = async (shopData, query, variables, api_version = "
             }
             console.warn(`Retrying request (${attempt}/${MAX_RETRIES}) due to error:`, error);
             await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-            continue; 
+            continue;
 
         }
     }
