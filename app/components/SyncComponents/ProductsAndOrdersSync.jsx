@@ -27,8 +27,11 @@ export default function ProductsAndOrdersSync() {
 
     useEffect(() => {
         fetchListedProducts()
-        fetchSyncStatus()
     }, [currentPage])
+
+    useEffect(() => {
+        fetchSyncStatus()
+    }, [])
 
     const fetchSyncStatus = async () => {
         try {
@@ -40,6 +43,10 @@ export default function ProductsAndOrdersSync() {
                         orderSync: data?.syncStatus[0].isOrderProcessing,
                         productSync: data?.syncStatus[0].isProductProcessing
                     })
+                    
+                    if (data?.syncStatus[0].isProductProcessing || data?.syncStatus[0].isOrderProcessing) {
+                        pollSyncStatus()
+                    }
                 }
                 console.log("data of getSyncStatus", data);
             }
@@ -171,7 +178,7 @@ export default function ProductsAndOrdersSync() {
     //     return currentPage * itemsPerPage + index + 1;
     // };
 
-    const pollSyncStatus = async (type) => {
+    const pollSyncStatus = async () => {
         await new Promise(resolve => setTimeout(resolve, 10000));
         let isComplete = false;
 
@@ -188,17 +195,16 @@ export default function ProductsAndOrdersSync() {
 
                 if (dataSyncStatus?.syncStatus?.length > 0) {
                     const { isOrderProcessing, isProductProcessing } = dataSyncStatus.syncStatus[0];
-
                     console.log(" isOrderProcessing, isProductProcessing", isOrderProcessing, isProductProcessing);
 
+                    setLoading({
+                        orderSync: isOrderProcessing,
+                        productSync: isProductProcessing
+                    });
 
-                    if (type === "product" ? !isProductProcessing : !isOrderProcessing) {
+                    if (!isOrderProcessing && !isProductProcessing) {
                         console.log("Process finished!", dataSyncStatus);
                         isComplete = true;
-                        setLoading((prev) => ({
-                            orderSync: type !== "product" ? false : prev.orderSync,
-                            productSync: type === "product" ? false : prev.productSync
-                        }));
                         await fetchListedProducts();
                     }
                 }
@@ -218,7 +224,7 @@ export default function ProductsAndOrdersSync() {
                 productSync: type === "product" ? true : prev.productSync
             }))
 
-            pollSyncStatus(type)
+            pollSyncStatus()
             const data = type === "product" ? await updateShopifyProducts() : await createShopifyOrder();
 
             // if (data?.status === "finished") {

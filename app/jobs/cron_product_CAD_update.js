@@ -19,7 +19,16 @@ export async function cron_product_CAD_update() {
             console.log("sync process has been started of products through cron!");
             const api_key = process.env.crewsupply_api_key;
             // console.log("api_key", api_key);
+            const updateStartStatus = await prisma.SyncStatus.update({
+                where: {
+                    id: 3,
+                },
+                data: {
+                    isProductProcessing: true,
 
+                },
+            })
+            console.log("updateStartStatus", updateStartStatus);
 
             let totalProductsToUpdate = [];
             let kickscrewCurrentPage = 0;
@@ -114,7 +123,7 @@ export async function cron_product_CAD_update() {
                             // console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
 
                             if (locationID) {
-                                
+
                                 const inventoryAdjustmentMutation = `
                                     mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
                                         inventoryAdjustQuantities(input: $input) {
@@ -161,6 +170,17 @@ export async function cron_product_CAD_update() {
 
         } catch (error) {
             console.error("Error while syncing products:", error);
+        } finally {
+            const updateEndStatus = await prisma.SyncStatus.update({
+                where: {
+                    id: 3,
+                },
+                data: {
+                    isProductProcessing: false,
+
+                },
+            })
+            console.log("updateEndStatus", updateEndStatus)
         }
     };
 

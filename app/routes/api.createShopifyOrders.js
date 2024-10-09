@@ -45,7 +45,13 @@ export const loader = async ({ request }) => {
 
         console.log("Sync completed successfully. All orders have been created on Shopify store of API.");
 
+        return json({ message: "Successfully created orders!" });
 
+    }
+    catch (error) {
+        console.error("Error during order creation:", error);
+        return json({ error: "Error occurred while creating orders!" });
+    } finally {
         const updateEndStatus = await prisma.SyncStatus.update({
             where: {
                 id: 3,
@@ -56,13 +62,6 @@ export const loader = async ({ request }) => {
             },
         })
         console.log("updateEndStatus", updateEndStatus)
-
-        return json({ message: "Successfully created orders!" });
-
-    }
-    catch (error) {
-        console.error("Error during order creation:", error);
-        return json({ error: "Error occurred while creating orders!" });
     }
 };
 
@@ -184,7 +183,7 @@ const fulfillOrder = async (shopData, orderID) => {
                     }]
                 }
             }
-        },"2024-10");
+        }, "2024-10");
     }
 };
 

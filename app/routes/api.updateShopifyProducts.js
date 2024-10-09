@@ -166,6 +166,13 @@ export const loader = async ({ request }) => {
 
         console.log("Sync completed successfully. All products have been processed of API.");
 
+        return json({ message: "successfully synced products" })
+
+    } catch (error) {
+        console.error("Error while syncing products:", error);
+        return json({ message: "Error while syncing products" })
+
+    } finally {
         const updateEndStatus = await prisma.SyncStatus.update({
             where: {
                 id: 3,
@@ -176,12 +183,5 @@ export const loader = async ({ request }) => {
             },
         })
         console.log("updateEndStatus", updateEndStatus)
-
-        return json({ message: "successfully synced products" })
-
-    } catch (error) {
-        console.error("Error while syncing products:", error);
-        return json({ message: "Error while syncing products" })
-
     }
 };

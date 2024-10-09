@@ -19,6 +19,17 @@ export async function cron_orders_shopify_create() {
 
             console.log("Sync order has started of orders through cron!");
 
+            const updateStartStatus = await prisma.SyncStatus.update({
+                where: {
+                    id: 3,
+                },
+                data: {
+                    isOrderProcessing: true,
+
+                },
+            })
+            console.log("updateStartStatus", updateStartStatus);
+
             let totalOrdersToCreate = [];
             let currentPage = 0;
             let hasNextPage = true;
@@ -39,6 +50,17 @@ export async function cron_orders_shopify_create() {
         catch (error) {
             console.error("Error during order creation on cron:", error);
             return console.log("Error occurred while creating orders on cron!");
+        } finally {
+            const updateEndStatus = await prisma.SyncStatus.update({
+                where: {
+                    id: 3,
+                },
+                data: {
+                    isOrderProcessing: false,
+
+                },
+            })
+            console.log("updateEndStatus", updateEndStatus)
         }
     };
 
@@ -77,7 +99,7 @@ const processOrder = (shopData) => async (order) => {
 
         const existingOrder = await findExistingOrder(shopData, order.order_id);
         // console.log("existingOrder.............................>",existingOrder);
-        
+
         if (existingOrder) {
             await updateExistingOrder(shopData, existingOrder, order);
         } else {
@@ -186,7 +208,7 @@ const fulfillOrder = async (shopData, orderID) => {
                     }]
                 }
             }
-        },"2024-10");
+        }, "2024-10");
     }
 };
 

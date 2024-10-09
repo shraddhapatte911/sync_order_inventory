@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://cited-tsunami-equally-dining.trycloudflare.com"
+application_url = "https://enable-compilation-ccd-disease.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_inventory,read_locations,read_orders,read_products,write_assigned
 
 [auth]
 redirect_urls = [
-  "https://cited-tsunami-equally-dining.trycloudflare.com/auth/callback",
-  "https://cited-tsunami-equally-dining.trycloudflare.com/auth/shopify/callback",
-  "https://cited-tsunami-equally-dining.trycloudflare.com/api/auth/callback"
+  "https://enable-compilation-ccd-disease.trycloudflare.com/auth/callback",
+  "https://enable-compilation-ccd-disease.trycloudflare.com/auth/shopify/callback",
+  "https://enable-compilation-ccd-disease.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://cited-tsunami-equally-dining.trycloudflare.com"
+url = "https://enable-compilation-ccd-disease.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 
