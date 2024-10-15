@@ -18,17 +18,18 @@ export const loader = async ({ request }) => {
 
         console.log("Sync order has started of orders through api!");
 
+        const firstStatus = await prisma.SyncStatus.findFirst();
 
-        const updateStartStatus = await prisma.SyncStatus.update({
-            where: {
-                id: 3,
-            },
-            data: {
-                isOrderProcessing: true,
+        if (!firstStatus) {
+            console.error("No records found in SyncStatus");
+        } else {
 
-            },
-        })
-        console.log("updateStartStatus", updateStartStatus);
+            const updateFirstStatus = await prisma.SyncStatus.update({
+                where: { id: firstStatus.id },
+                data: { isOrderProcessing: true },
+            });
+            // console.log("updateFirstStatus", updateFirstStatus);
+        }
 
         let totalOrdersToCreate = [];
         let currentPage = 0;
@@ -52,16 +53,19 @@ export const loader = async ({ request }) => {
         console.error("Error during order creation:", error);
         return json({ error: "Error occurred while creating orders!" });
     } finally {
-        const updateEndStatus = await prisma.SyncStatus.update({
-            where: {
-                id: 3,
-            },
-            data: {
-                isOrderProcessing: false,
 
-            },
-        })
-        console.log("updateEndStatus", updateEndStatus)
+        const firstStatus = await prisma.SyncStatus.findFirst();
+
+        if (!firstStatus) {
+            console.error("No records found in SyncStatus");
+        } else {
+
+            const updateFirstStatus = await prisma.SyncStatus.update({
+                where: { id: firstStatus.id },
+                data: { isOrderProcessing: false },
+            });
+            // console.log("updateFirstStatus", updateFirstStatus);
+        }
     }
 };
 

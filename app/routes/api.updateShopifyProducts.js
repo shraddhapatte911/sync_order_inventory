@@ -11,16 +11,18 @@ export const loader = async ({ request }) => {
         const shopData = await prisma.session.findMany()
         if (!shopData.length) return
 
-        const updateStartStatus = await prisma.SyncStatus.update({
-            where: {
-                id: 3,
-            },
-            data: {
-                isProductProcessing: true,
+        const firstStatus = await prisma.SyncStatus.findFirst();
 
-            },
-        })
-        console.log("updateStartStatus", updateStartStatus);
+        if (!firstStatus) {
+            console.error("No records found in SyncStatus");
+        } else {
+
+            const updateFirstStatus = await prisma.SyncStatus.update({
+                where: { id: firstStatus.id },
+                data: { isProductProcessing: true },
+            });
+            // console.log("updateFirstStatus", updateFirstStatus);
+        }
 
         console.log('Task executed at:', new Date(), shopData);
         console.log("sync process has been started of products through api!");
@@ -173,15 +175,18 @@ export const loader = async ({ request }) => {
         return json({ message: "Error while syncing products" })
 
     } finally {
-        const updateEndStatus = await prisma.SyncStatus.update({
-            where: {
-                id: 3,
-            },
-            data: {
-                isProductProcessing: false,
 
-            },
-        })
-        console.log("updateEndStatus", updateEndStatus)
+        const firstStatus = await prisma.SyncStatus.findFirst();
+
+        if (!firstStatus) {
+            console.error("No records found in SyncStatus");
+        } else {
+
+            const updateFirstStatus = await prisma.SyncStatus.update({
+                where: { id: firstStatus.id },
+                data: { isProductProcessing: false },
+            });
+            // console.log("updateFirstStatus", updateFirstStatus);
+        }
     }
 };

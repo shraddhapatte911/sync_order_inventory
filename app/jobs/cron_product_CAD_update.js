@@ -18,17 +18,19 @@ export async function cron_product_CAD_update() {
             console.log('Task executed at:', new Date(), shopData);
             console.log("sync process has been started of products through cron!");
             const api_key = process.env.crewsupply_api_key;
-            // console.log("api_key", api_key);
-            const updateStartStatus = await prisma.SyncStatus.update({
-                where: {
-                    id: 3,
-                },
-                data: {
-                    isProductProcessing: true,
 
-                },
-            })
-            console.log("updateStartStatus", updateStartStatus);
+            const firstStatus = await prisma.SyncStatus.findFirst();
+
+            if (!firstStatus) {
+                console.error("No records found in SyncStatus");
+            } else {
+
+                const updateFirstStatus = await prisma.SyncStatus.update({
+                    where: { id: firstStatus.id },
+                    data: { isProductProcessing: true },
+                });
+                // console.log("updateFirstStatus", updateFirstStatus);
+            }
 
             let totalProductsToUpdate = [];
             let kickscrewCurrentPage = 0;
@@ -171,16 +173,19 @@ export async function cron_product_CAD_update() {
         } catch (error) {
             console.error("Error while syncing products:", error);
         } finally {
-            const updateEndStatus = await prisma.SyncStatus.update({
-                where: {
-                    id: 3,
-                },
-                data: {
-                    isProductProcessing: false,
 
-                },
-            })
-            console.log("updateEndStatus", updateEndStatus)
+            const firstStatus = await prisma.SyncStatus.findFirst();
+
+            if (!firstStatus) {
+                console.error("No records found in SyncStatus");
+            } else {
+
+                const updateFirstStatus = await prisma.SyncStatus.update({
+                    where: { id: firstStatus.id },
+                    data: { isProductProcessing: false },
+                });
+                // console.log("updateFirstStatus", updateFirstStatus);
+            }
         }
     };
 

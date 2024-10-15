@@ -19,16 +19,17 @@ export async function cron_orders_shopify_create() {
 
             console.log("Sync order has started of orders through cron!");
 
-            const updateStartStatus = await prisma.SyncStatus.update({
-                where: {
-                    id: 3,
-                },
-                data: {
-                    isOrderProcessing: true,
+            const firstStatus = await prisma.SyncStatus.findFirst();
+            if (!firstStatus) {
+                console.error("No records found in SyncStatus");
+            } else {
 
-                },
-            })
-            console.log("updateStartStatus", updateStartStatus);
+                const updateFirstStatus = await prisma.SyncStatus.update({
+                    where: { id: firstStatus.id },
+                    data: { isOrderProcessing: true },
+                });
+                // console.log("updateFirstStatus", updateFirstStatus);
+            }
 
             let totalOrdersToCreate = [];
             let currentPage = 0;
@@ -51,16 +52,19 @@ export async function cron_orders_shopify_create() {
             console.error("Error during order creation on cron:", error);
             return console.log("Error occurred while creating orders on cron!");
         } finally {
-            const updateEndStatus = await prisma.SyncStatus.update({
-                where: {
-                    id: 3,
-                },
-                data: {
-                    isOrderProcessing: false,
 
-                },
-            })
-            console.log("updateEndStatus", updateEndStatus)
+            const firstStatus = await prisma.SyncStatus.findFirst();
+
+            if (!firstStatus) {
+                console.error("No records found in SyncStatus");
+            } else {
+
+                const updateFirstStatus = await prisma.SyncStatus.update({
+                    where: { id: firstStatus.id },
+                    data: { isOrderProcessing: false },
+                });
+                // console.log("updateFirstStatus", updateFirstStatus);
+            }
         }
     };
 
