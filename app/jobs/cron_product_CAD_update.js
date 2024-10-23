@@ -197,7 +197,9 @@ export async function cron_product_CAD_update() {
 
     // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
-    const scheduledTime = '0 * * * *';  // cron job to run every hour
+    // const scheduledTime = '0 * * * *';  // cron job to run every hour
+
+    const scheduledTime = '*/30 * * * *';  // cron job to run every 30 minutes
 
     // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 

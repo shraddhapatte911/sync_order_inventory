@@ -76,7 +76,9 @@ export async function cron_orders_shopify_create() {
 
     // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
-    const scheduledTime = '0 * * * *';  // cron job to run every hour
+    // const scheduledTime = '0 * * * *';  // cron job to run every hour
+
+    const scheduledTime = '*/20 * * * *';  // cron job to run every 20 minutes
 
     // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 
