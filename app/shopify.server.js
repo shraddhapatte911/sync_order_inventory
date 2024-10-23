@@ -10,6 +10,9 @@ import { restResources } from "@shopify/shopify-api/rest/admin/2024-07";
 import prisma from "./db.server";
 import { cron_product_CAD_update } from "./jobs/cron_product_CAD_update";
 import { cron_orders_shopify_create } from "./jobs/cron_orders_shopify_create";
+import dotenv from "dotenv"
+
+dotenv.config()
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -44,7 +47,7 @@ const shopify = shopifyApp({
     : {}),
 });
 
-cron_product_CAD_update()  
+cron_product_CAD_update()
 cron_orders_shopify_create()
 
 export default shopify;
