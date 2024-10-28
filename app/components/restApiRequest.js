@@ -1,5 +1,5 @@
 const MAX_RETRIES = 3;
-const DELAY_DUR = 5000
+const DELAY_DUR = 70 * 1000
 
 export const restApiRequest = async (shopData, bodyData, endPoint, method = "POST") => {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {

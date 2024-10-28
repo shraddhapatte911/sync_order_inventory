@@ -102,7 +102,8 @@ const processOrder = (shopData) => async (order) => {
         const variantId = await getVariantId(shopData, order);
         // variantId ? console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
         if (!variantId) return console.warn(`Variant not found for model_no: ${order.model_no}`);
-
+            
+        // await new Promise(resolve => setTimeout(resolve, 70000));
         const existingOrder = await findExistingOrder(shopData, order.order_id);
         // console.log("existingOrder.............................>",existingOrder);
 
