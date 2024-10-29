@@ -3,8 +3,11 @@ import prisma from '../db.server';
 import fetchCreatedOrders from '../apis/fetchCreatedOrders';
 import { graphqlRequest } from '../components/graphqlRequest';
 import { restApiRequest } from '../components/restApiRequest';
+import { json } from '@remix-run/node';
 
 const ORDERS_PER_PAGE = 100;
+// let lastCreatedOrderDate;
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function cron_orders_shopify_create() {
@@ -19,11 +22,16 @@ export async function cron_orders_shopify_create() {
 
             console.log("Sync order has started of orders through cron!");
 
+            // .......................sync status
             const firstStatus = await prisma.SyncStatus.findFirst();
+            if (firstStatus?.isOrderProcessing === true) {
+                // console.log("firstStatus?.isOrderProcessing", firstStatus?.isOrderProcessing);
+                return json({ message: "Already processing orders." })
+            }
+            // console.log("trigger on cron after firstStatus?.isOrderProcessing:", firstStatus?.isOrderProcessing);
             if (!firstStatus) {
                 console.error("No records found in SyncStatus");
             } else {
-
                 const updateFirstStatus = await prisma.SyncStatus.update({
                     where: { id: firstStatus.id },
                     data: { isOrderProcessing: true },
@@ -31,40 +39,68 @@ export async function cron_orders_shopify_create() {
                 // console.log("updateFirstStatus", updateFirstStatus);
             }
 
+            // .......................... end
+
+            //.................... date
+            const lastOrderCreated = await prisma.LastOrderCreated.findMany();
+            const lastOrderDate = lastOrderCreated?.[0]?.date;
+            // console.log("LastOrderCreated date:", lastOrderDate);
+            //.................... end
             let totalOrdersToCreate = [];
             let currentPage = 0;
             let hasNextPage = true;
 
             while (hasNextPage) {
-                const { totalOrders, gotOrders } = await fetchCreatedOrders(currentPage, apiKey);
+                const { totalOrders, gotOrders } = await fetchCreatedOrders(currentPage, apiKey, lastOrderDate);
                 totalOrdersToCreate.push(...gotOrders);
                 hasNextPage = (currentPage + 1) * ORDERS_PER_PAGE < totalOrders;
                 currentPage++;
             }
 
-            await Promise.all(totalOrdersToCreate.map(processOrder(shopData)));
+            // console.log("totalOrdersToCreate length", totalOrdersToCreate.length);
+            const lastCreatedOrderDate = totalOrdersToCreate[0].created_at
+            // ................date to update
+            // console.log("lastCreatedOrderDate", lastCreatedOrderDate);
+            const firstDate = await prisma.LastOrderCreated.findFirst();
+            if (!firstDate) {
+                const newDate = await prisma.LastOrderCreated.create({
+                    data: {
+                        date: lastCreatedOrderDate
+                    },
+                });
+            } else {
+                const updateDate = await prisma.LastOrderCreated.update({
+                    where: { id: firstDate.id },
+                    data: {
+                        date: lastCreatedOrderDate
+                    },
+                });
+            }
+            // ................date to update
+
+            // processing order one by one
+            for (const order of totalOrdersToCreate) {
+                await processOrder(shopData, order);
+            }
+
+            const secondStatus = await prisma.SyncStatus.findFirst();
+            await prisma.SyncStatus.update({
+                where: { id: secondStatus.id },
+                data: { isOrderProcessing: false },
+            });
 
             console.log("Sync completed successfully. All orders have been created on Shopify store of cron.");
             return console.log("Successfully created orders!");
 
         }
         catch (error) {
+            const thirdStatus = await prisma.SyncStatus.findFirst();
+            await prisma.SyncStatus.update({
+                where: { id: thirdStatus.id },
+                data: { isOrderProcessing: false },
+            });
             console.error("Error during order creation on cron:", error);
             return console.log("Error occurred while creating orders on cron!");
-        } finally {
-
-            const firstStatus = await prisma.SyncStatus.findFirst();
-
-            if (!firstStatus) {
-                console.error("No records found in SyncStatus");
-            } else {
-
-                const updateFirstStatus = await prisma.SyncStatus.update({
-                    where: { id: firstStatus.id },
-                    data: { isOrderProcessing: false },
-                });
-                // console.log("updateFirstStatus", updateFirstStatus);
-            }
         }
     };
 
@@ -76,13 +112,15 @@ export async function cron_orders_shopify_create() {
 
     // const scheduledTime = '0 */48 * * *'   // cron job to run every 48 hours
 
-    // const scheduledTime = '0 * * * *';  // cron job to run every hour
+    const scheduledTime = '0 * * * *';  // cron job to run every hour
 
-    const scheduledTime = '*/20 * * * *';  // cron job to run every 20 minutes
+    // const scheduledTime = '*/50 * * * *';  // cron job to run every 50 minutes
+
+    // const scheduledTime = '*/5 * * * *';  // cron job to run every 5 minutes
 
     // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 
-    // // const scheduledTime = '*/15 * * * * *' // to run every 10 seconds
+    // // const scheduledTime = '*/15 * * * * *' // to run every 15 seconds
 
     const scheduledJob = cron.schedule(scheduledTime, task);
 
@@ -91,18 +129,18 @@ export async function cron_orders_shopify_create() {
 
     });
 
-    console.log('Cron job scheduled to run every 2 hours of cron_orders_shopify_create');
+    console.log('Cron job scheduled to run every hour of cron_orders_shopify_create');
 
 }
 
 
 
-const processOrder = (shopData) => async (order) => {
+const processOrder = async (shopData, order) => {
     try {
         const variantId = await getVariantId(shopData, order);
         // variantId ? console.log("YES order.model_no", order.model_no) : console.log("NO order.model_no", order.model_no)
         if (!variantId) return console.warn(`Variant not found for model_no: ${order.model_no}`);
-            
+
         // await new Promise(resolve => setTimeout(resolve, 70000));
         const existingOrder = await findExistingOrder(shopData, order.order_id);
         // console.log("existingOrder.............................>",existingOrder);
@@ -120,7 +158,7 @@ const processOrder = (shopData) => async (order) => {
 const getVariantId = async (shopData, order) => {
     const productTagQuery = `
         query {
-            products(first: 10, query: "tag:${order.model_no}") {
+            products(first: 10, query: "tag:kickscrew-${order.model_no}") {
                 edges {
                     node {
                         id
@@ -289,6 +327,9 @@ const createNewOrder = async (shopData, order, variantId) => {
         } else {
             console.log('no operation needed status:', order.status);
         }
+
+        // // update date variable
+        // lastCreatedOrderDate = order.created_at
     }
     console.log(`New order created for order ID: ${order.order_id}`);
 };

@@ -12,11 +12,14 @@ export const loader = async ({ request }) => {
         if (!shopData.length) return
 
         const firstStatus = await prisma.SyncStatus.findFirst();
-
+        if (firstStatus?.isProductProcessing === true) {
+            // console.log("firstStatus?.isProductProcessing", firstStatus?.isProductProcessing);
+            return json({message: "Already processing products."})
+        }
+        // console.log("trigger on API after firstStatus?.isProductProcessing:", firstStatus?.isProductProcessing);
         if (!firstStatus) {
             console.error("No records found in SyncStatus");
         } else {
-
             const updateFirstStatus = await prisma.SyncStatus.update({
                 where: { id: firstStatus.id },
                 data: { isProductProcessing: true },
@@ -46,7 +49,7 @@ export const loader = async ({ request }) => {
         // console.log("Total Products To Update:", totalProductsToUpdate.length);
         // await new Promise(resolve => setTimeout(resolve, 30000));
 
-        await Promise.all(totalProductsToUpdate.map(async (product) => {
+        for (const product of totalProductsToUpdate) {
             // console.log("product.model_number", product.model_number);
 
             try {
@@ -164,29 +167,26 @@ export const loader = async ({ request }) => {
             } catch (error) {
                 console.error(`Error processing product ${product.model_number}:`, error);
             }
-        }));
+        };
 
         console.log("Sync completed successfully. All products have been processed of API.");
 
-        return json({ message: "successfully synced products" })
+        const secondStatus = await prisma.SyncStatus.findFirst();
+        await prisma.SyncStatus.update({
+            where: { id: secondStatus.id },
+            data: { isProductProcessing: false },
+        });
 
+        return json({ message: "successfully synced products" })
     } catch (error) {
         console.error("Error while syncing products:", error);
+
+        const thirdStatus = await prisma.SyncStatus.findFirst();
+        await prisma.SyncStatus.update({
+            where: { id: thirdStatus.id },
+            data: { isProductProcessing: false },
+        });
+
         return json({ message: "Error while syncing products" })
-
-    } finally {
-
-        const firstStatus = await prisma.SyncStatus.findFirst();
-
-        if (!firstStatus) {
-            console.error("No records found in SyncStatus");
-        } else {
-
-            const updateFirstStatus = await prisma.SyncStatus.update({
-                where: { id: firstStatus.id },
-                data: { isProductProcessing: false },
-            });
-            // console.log("updateFirstStatus", updateFirstStatus);
-        }
     }
 };

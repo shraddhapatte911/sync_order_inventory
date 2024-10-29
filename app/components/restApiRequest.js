@@ -21,9 +21,8 @@ export const restApiRequest = async (shopData, bodyData, endPoint, method = "POS
                 console.error("Response isn't ok of rest api:", data);
 
                 if (data.errors && data.errors.includes('API rate limit')) {
-                    const retryAfter = 60 * 1000; // 60 seconds
-                    console.warn(`Rate limit exceeded. Retrying request after ${retryAfter / 1000} seconds.`);
-                    await new Promise(resolve => setTimeout(resolve, retryAfter));
+                    console.warn(`Rate limit exceeded. Retrying request after ${DELAY_DUR / 1000} seconds.`);
+                    await new Promise(resolve => setTimeout(resolve, DELAY_DUR));
                     continue; 
                 }
 

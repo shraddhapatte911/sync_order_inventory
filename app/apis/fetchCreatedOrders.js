@@ -1,11 +1,11 @@
-const fetchCreatedOrders = async (page_no, api_key) => {
+const fetchCreatedOrders = async (page_no, api_key, lastOrderDate) => {
     let totalOrders;
     let gotOrders = [];
     // console.log("page_no, page_size, api_key", page_no, "    ", page_size, "     ", api_key);
 
     try {
-        const urlWithDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&date_from=${"2024-08-02T02:33:14.000Z"}&date_to=${"2024-08-02T02:33:14.000Z"}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
-        const urlWithoutDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
+        // const urlWithDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}&date_from=${"2024-08-02T02:33:14.000Z"}&date_to=${"2024-08-02T02:33:14.000Z"}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
+        const urlWithoutDateRange = `https://api.crewsupply.kickscrew.com/sapi/v2/orders?page=${page_no}${lastOrderDate ? `&date_from=${lastOrderDate}` : ''}&status=${"order.confirmed,order.packed,order.completed,order.canceled"}`
         const responseOfOrders = await fetch(urlWithoutDateRange, {
             method: "GET",
             headers: {

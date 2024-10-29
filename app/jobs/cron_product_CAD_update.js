@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import prisma from '../db.server';
 import fetchListedProducts from '../apis/fetchListedProducts';
 import { graphqlRequest } from '../components/graphqlRequest';
+import { json } from '@remix-run/node';
 
 // const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -20,11 +21,14 @@ export async function cron_product_CAD_update() {
             const api_key = process.env.crewsupply_api_key;
 
             const firstStatus = await prisma.SyncStatus.findFirst();
-
+            if (firstStatus?.isProductProcessing === true) {
+                // console.log("firstStatus?.isProductProcessing", firstStatus?.isProductProcessing);
+                return json({ message: "Already processing products." })
+            }
+            // console.log("trigger on cron after firstStatus?.isProductProcessing:", firstStatus?.isProductProcessing);
             if (!firstStatus) {
                 console.error("No records found in SyncStatus");
             } else {
-
                 const updateFirstStatus = await prisma.SyncStatus.update({
                     where: { id: firstStatus.id },
                     data: { isProductProcessing: true },
@@ -45,12 +49,11 @@ export async function cron_product_CAD_update() {
                 kickscrewCurrentPage++;
             }
 
-            console.log("First Product:", totalProductsToUpdate[0]);
+            // console.log("First Product:", totalProductsToUpdate[0]);
             // console.log("Total Products To Update:", totalProductsToUpdate.length);
 
-            await Promise.all(totalProductsToUpdate.map(async (product) => {
+            for (const product of totalProductsToUpdate) {
                 // console.log("product.model_number", product.model_number);
-
                 try {
                     const productTagQuery = `
                         query {
@@ -166,26 +169,23 @@ export async function cron_product_CAD_update() {
                 } catch (error) {
                     console.error(`Error processing product ${product.model_number}:`, error);
                 }
-            }));
+            };
+
+            const secondStatus = await prisma.SyncStatus.findFirst();
+            await prisma.SyncStatus.update({
+                where: { id: secondStatus.id },
+                data: { isProductProcessing: false },
+            });
 
             console.log("Sync completed successfully. All products have been processed of cron.");
 
         } catch (error) {
+            const thirdStatus = await prisma.SyncStatus.findFirst();
+            await prisma.SyncStatus.update({
+                where: { id: thirdStatus.id },
+                data: { isProductProcessing: false },
+            });
             console.error("Error while syncing products:", error);
-        } finally {
-
-            const firstStatus = await prisma.SyncStatus.findFirst();
-
-            if (!firstStatus) {
-                console.error("No records found in SyncStatus");
-            } else {
-
-                const updateFirstStatus = await prisma.SyncStatus.update({
-                    where: { id: firstStatus.id },
-                    data: { isProductProcessing: false },
-                });
-                // console.log("updateFirstStatus", updateFirstStatus);
-            }
         }
     };
 
@@ -201,9 +201,11 @@ export async function cron_product_CAD_update() {
 
     const scheduledTime = '*/30 * * * *';  // cron job to run every 30 minutes
 
+    // const scheduledTime = '*/5 * * * *';  // cron job to run every 5 minutes
+
     // const scheduledTime = '0 */2 * * *';  // cron job to run every 2 hours
 
-    // // const scheduledTime = '*/15 * * * * *' // to run every 10 seconds
+    // const scheduledTime = '*/20 * * * * *' // to run every 20 seconds
 
     const scheduledJob = cron.schedule(scheduledTime, task);
 
@@ -212,7 +214,7 @@ export async function cron_product_CAD_update() {
 
     });
 
-    console.log('Cron job scheduled to run every 2 hours of cron_product_CAD_update');
+    console.log('Cron job scheduled to run every 30 minutes of cron_product_CAD_update');
 
 }
 

@@ -3,7 +3,7 @@
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://states-defense-multi-tonight.trycloudflare.com"
+application_url = "https://wm-protein-ease-cooperation.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_inventory,read_locations,read_orders,read_products,write_assigned
 
 [auth]
 redirect_urls = [
-  "https://states-defense-multi-tonight.trycloudflare.com/auth/callback",
-  "https://states-defense-multi-tonight.trycloudflare.com/auth/shopify/callback",
-  "https://states-defense-multi-tonight.trycloudflare.com/api/auth/callback"
+  "https://wm-protein-ease-cooperation.trycloudflare.com/auth/callback",
+  "https://wm-protein-ease-cooperation.trycloudflare.com/auth/shopify/callback",
+  "https://wm-protein-ease-cooperation.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
 [app_proxy]
-url = "https://states-defense-multi-tonight.trycloudflare.com"
+url = "https://wm-protein-ease-cooperation.trycloudflare.com"
 subpath = "sync-order-inventory"
 prefix = "apps"
 

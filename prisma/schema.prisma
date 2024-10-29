@@ -30,3 +30,8 @@ model SyncStatus {
   isOrderProcessing      Boolean   @default(false)
   isProductProcessing    Boolean   @default(false)
 }
+
+model LastOrderCreated {
+  id    Int    @id @default(autoincrement())
+  date String?
+}
