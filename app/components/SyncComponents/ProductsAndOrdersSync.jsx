@@ -382,6 +382,7 @@ export default function ProductsAndOrdersSync() {
                         paddingBottom='30px'
                         paddingLeft="3rem"
                         paddingRight="15rem"
+                        className='right-card-main'
                         itemsCentered
                     />
 

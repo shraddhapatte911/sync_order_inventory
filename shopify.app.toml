@@ -1,29 +1,34 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "fdbe7ac6c759064ff099b0e4b290514a"
+application_url = "https://portuguese-respondents-weed-particle.trycloudflare.com"
+embedded = true
 name = "Sync Order-Inventory"
 handle = "sync-order-inventory"
-application_url = "https://rewards-deferred-tutorials-paths.trycloudflare.com"
-embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 dev_store_url = "nextgen-dev.myshopify.com"
 include_config_on_deploy = true
 
+[webhooks]
+api_version = "2024-07"
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = ""
+scopes = "read_inventory,read_locations,read_orders,read_products,write_assigned_fulfillment_orders,write_inventory,write_locations,write_merchant_managed_fulfillment_orders,write_orders,write_products"
 
 [auth]
 redirect_urls = [
-  "https://rewards-deferred-tutorials-paths.trycloudflare.com/auth/callback",
-  "https://rewards-deferred-tutorials-paths.trycloudflare.com/auth/shopify/callback",
-  "https://rewards-deferred-tutorials-paths.trycloudflare.com/api/auth/callback"
+  "https://portuguese-respondents-weed-particle.trycloudflare.com/auth/callback",
+  "https://portuguese-respondents-weed-particle.trycloudflare.com/auth/shopify/callback",
+  "https://portuguese-respondents-weed-particle.trycloudflare.com/api/auth/callback"
 ]
 
-[webhooks]
-api_version = "2024-07"
+[app_proxy]
+url = "https://portuguese-respondents-weed-particle.trycloudflare.com"
+subpath = "sync-order-inventory"
+prefix = "apps"
 
 [pos]
 embedded = false

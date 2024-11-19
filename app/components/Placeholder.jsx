@@ -1,3 +1,4 @@
+import '../css/main.css'
 const Placeholder = ({ component, height = 'auto',
     width = 'auto',
     marginTop = '20px',
@@ -8,7 +9,8 @@ const Placeholder = ({ component, height = 'auto',
     marginRight = '0px',
     paddingLeft = '0px',
     paddingRight = '0px',
-    paddingBottom = '0px',}) => {
+    paddingBottom = '0px',
+    className = 'childDiv', }) => {
     return (
         <div
             style={{
@@ -20,6 +22,7 @@ const Placeholder = ({ component, height = 'auto',
             }}
         >
             <div
+                className={className}
                 style={{
                     color: 'var(--p-color-text)',
                     marginTop: marginTop,

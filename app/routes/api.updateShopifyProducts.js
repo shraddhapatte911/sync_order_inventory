@@ -8,13 +8,16 @@ export const loader = async ({ request }) => {
         // for testing quantity of products
         // 5650-1SS240106CWHS-BLAC
         // DH4692-003
+        // new
+        // P25TS339
+        // DJ4400-001
         const shopData = await prisma.session.findMany()
         if (!shopData.length) return
 
         const firstStatus = await prisma.SyncStatus.findFirst();
         if (firstStatus?.isProductProcessing === true) {
             // console.log("firstStatus?.isProductProcessing", firstStatus?.isProductProcessing);
-            return json({message: "Already processing products."})
+            return json({ message: "Already processing products." })
         }
         // console.log("trigger on API after firstStatus?.isProductProcessing:", firstStatus?.isProductProcessing);
         if (!firstStatus) {
@@ -46,11 +49,11 @@ export const loader = async ({ request }) => {
         }
 
         console.log("First Product:", totalProductsToUpdate[0]);
-        // console.log("Total Products To Update:", totalProductsToUpdate.length);
+        console.log("Total Products To Update:", totalProductsToUpdate.length);
         // await new Promise(resolve => setTimeout(resolve, 30000));
 
         for (const product of totalProductsToUpdate) {
-            // console.log("product.model_number", product.model_number);
+            console.log("product.model_number", product.model_number);
 
             try {
                 const productTagQuery = `
@@ -69,6 +72,7 @@ export const loader = async ({ request }) => {
                 `;
                 const dataOfProductTag = await graphqlRequest(shopData, productTagQuery);
                 const tagValue = dataOfProductTag.data?.products?.edges?.[0]?.node?.id;
+                // product.model_number === "DJ4400-001" && console.log("tagValue", tagValue);
 
                 if (tagValue) {
                     const productVariantsQuery = `
@@ -115,15 +119,14 @@ export const loader = async ({ request }) => {
                         const locationID = variantToUpdate.node.inventoryItem.inventoryLevels.edges[0]?.node?.location?.id;
                         const delta = product.quantity - variantToUpdate.node.inventoryQuantity;
 
-                        // if (product.model_number === "5650-1SS240106CWHS-BLAC") {
+                        // if (product.model_number === "DJ4400-001") {
                         //     console.log("5650-1SS240106CWHS-BLAC product.model_size", product.model_size);
                         //     console.log("5650-1SS240106CWHS-BLAC delta", delta);
                         //     console.log("5650-1SS240106CWHS-BLAC product.quantity", product.quantity);
                         //     console.log("5650-1SS240106CWHS-BLAC variantToUpdate.node.inventoryQuantity", variantToUpdate.node.inventoryQuantity);
-
                         // }
 
-                        // console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
+                        // product.model_number === "DJ4400-001" && console.log("Quantity delta......", delta, "inventoryItemID...", inventoryItemID, "locationID.....", locationID);
 
                         if (locationID) {
 

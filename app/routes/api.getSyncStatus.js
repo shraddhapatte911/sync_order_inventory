@@ -3,7 +3,7 @@ import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
 export const loader = async ({ request, params }) => {
-    console.log("Triggered getSyncStatus API");
+    // console.log("Triggered getSyncStatus API");
 
     try {
         const { admin, session } = await authenticate.admin(request);
@@ -21,7 +21,7 @@ export const loader = async ({ request, params }) => {
             syncStatusAll.push(newSyncStatus); 
         }
 
-        console.log("Sync status data:", syncStatusAll);
+        // console.log("Sync status data:", syncStatusAll);
         
         return json({ message: 'Sync data fetched successfully', syncStatus: syncStatusAll });
     } catch (error) {
